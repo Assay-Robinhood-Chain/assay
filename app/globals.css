@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #faf9f6;
+  --panel: #f1f0ea;
+  --card: #ffffff;
+  --line: #e7e5de;
+  --line-soft: #efede6;
+  --ink: #141413;
+  --ink-soft: #5a5852;
+  --muted: #6f6e69;
+  --faint: #a3a29b;
+  --cobalt: #1e4dd8;
+  --cobalt-soft: rgba(30, 77, 216, 0.1);
+  --gold: #a3730e;
+  --gold-soft: rgba(163, 115, 14, 0.12);
+  --up: #0e7e48;
+  --up-soft: rgba(14, 126, 72, 0.1);
+  --down: #b42318;
+  --down-soft: rgba(180, 35, 24, 0.1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #161614;
+    --panel: #1d1d1a;
+    --card: #201f1c;
+    --line: #302f2a;
+    --line-soft: #262620;
+    --ink: #f3f1ea;
+    --ink-soft: #b5b2a6;
+    --muted: #a6a498;
+    --faint: #6e6c63;
+    --cobalt: #7a9cff;
+    --cobalt-soft: rgba(122, 156, 255, 0.14);
+    --gold: #e0b04d;
+    --gold-soft: rgba(224, 176, 77, 0.14);
+    --up: #4ade9a;
+    --up-soft: rgba(74, 222, 154, 0.12);
+    --down: #ff7a6e;
+    --down-soft: rgba(255, 122, 110, 0.14);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #161614;
+  --panel: #1d1d1a;
+  --card: #201f1c;
+  --line: #302f2a;
+  --line-soft: #262620;
+  --ink: #f3f1ea;
+  --ink-soft: #b5b2a6;
+  --muted: #a6a498;
+  --faint: #6e6c63;
+  --cobalt: #7a9cff;
+  --cobalt-soft: rgba(122, 156, 255, 0.14);
+  --gold: #e0b04d;
+  --gold-soft: rgba(224, 176, 77, 0.14);
+  --up: #4ade9a;
+  --up-soft: rgba(74, 222, 154, 0.12);
+  --down: #ff7a6e;
+  --down-soft: rgba(255, 122, 110, 0.14);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-cobalt: var(--cobalt);
+  --color-cobalt-soft: var(--cobalt-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-up: var(--up);
+  --color-up-soft: var(--up-soft);
+  --color-down: var(--down);
+  --color-down-soft: var(--down-soft);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 88px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@layer base {
+  a {
+    color: inherit;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--cobalt-soft);
+}
+
+.ticker-track {
+  animation: ticker-slide 42s linear infinite;
+}
+
+.ticker-track:hover,
+.ticker-track:focus-within {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
