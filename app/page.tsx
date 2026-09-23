@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Hero from '@/components/Hero';
 import Reveal from '@/components/Reveal';
 import TopRankedPreview from '@/components/TopRankedPreview';
+import { SourceIcon } from '@/components/icons/SourceIcon';
 import { getLaunchpads } from '@/lib/supabase/queries';
 import {
   TARGET_CHAIN,
@@ -19,21 +20,57 @@ import { DimensionKey } from '@/lib/types';
 
 const DIMENSION_KEYS = Object.keys(DIMENSION_LABELS) as DimensionKey[];
 
-const ENGINES = [
+/** Cycled accents drawn from the existing palette — no new colors, just
+ * distributed so neighbouring cards never repeat the same one. */
+type Accent = 'cobalt' | 'up' | 'gold';
+const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
+const ACCENT: Record<
+  Accent,
+  { text: string; pill: string; border: string; glow: string; bar: string }
+> = {
+  cobalt: {
+    text: 'text-cobalt',
+    pill: 'bg-cobalt-soft text-cobalt',
+    border: 'hover:border-cobalt/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
+    bar: 'bg-cobalt',
+  },
+  up: {
+    text: 'text-up',
+    pill: 'bg-up-soft text-up',
+    border: 'hover:border-up/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
+    bar: 'bg-up',
+  },
+  gold: {
+    text: 'text-gold',
+    pill: 'bg-gold-soft text-gold',
+    border: 'hover:border-gold/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
+    bar: 'bg-gold',
+  },
+};
+
+const ENGINES: {
+  icon: 'telemetry' | 'contract' | 'discovery';
+  tag: string;
+  name: string;
+  desc: string;
+}[] = [
   {
-    icon: '📊',
+    icon: 'telemetry',
     tag: 'Price, liquidity, volume',
     name: 'Dexscreener',
     desc: 'Market-health telemetry — liquidity depth, 24h volume, and price history for every tracked launch, pulled the same way for every launchpad with no exceptions.',
   },
   {
-    icon: '🔍',
+    icon: 'contract',
     tag: 'Contract & holder data',
     name: 'Blockscout',
     desc: "Contract verification status, LP-lock evidence, and top-10 holder concentration — read straight off the chain, never taken from a launchpad's own claims.",
   },
   {
-    icon: '🛰️',
+    icon: 'discovery',
     tag: 'Launch discovery',
     name: 'Bitquery / Mobula',
     desc: "Documented factory addresses for the highest-volume launchpads, so new launches are found from a third party's published record — not reverse-engineered from scratch every time.",
@@ -96,26 +133,38 @@ export default async function HomePage() {
           </Reveal>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {DIMENSION_KEYS.map((key, i) => (
-              <Reveal key={key} delay={i * 0.05}>
-                <div className="flex h-full flex-col justify-between rounded-xl border border-line bg-card p-5">
-                  <div>
-                    <span className="font-mono text-[11px] text-cobalt">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="mt-1.5 text-sm font-medium text-ink">
-                      {DIMENSION_LABELS[key]}
+            {DIMENSION_KEYS.map((key, i) => {
+              const accent = ACCENT[ACCENT_ORDER[i % ACCENT_ORDER.length]];
+              return (
+                <Reveal key={key} delay={i * 0.05}>
+                  <div
+                    className={`group relative flex h-full flex-col justify-between overflow-hidden rounded-xl border border-line bg-card p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                  >
+                    <span
+                      className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
+                    />
+                    <div>
+                      <span
+                        className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="mt-1.5 text-sm font-medium text-ink">
+                        {DIMENSION_LABELS[key]}
+                      </div>
+                      <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                        {DIMENSION_DESCRIPTIONS[key]}
+                      </p>
                     </div>
-                    <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
-                      {DIMENSION_DESCRIPTIONS[key]}
-                    </p>
+                    <span
+                      className={`mt-4 inline-block w-fit rounded-full px-2.5 py-1 font-mono text-[11px] transition-colors duration-300 ${accent.pill}`}
+                    >
+                      Weight {(DIMENSION_WEIGHTS[key] * 100).toFixed(0)}%
+                    </span>
                   </div>
-                  <span className="mt-4 inline-block w-fit rounded-full bg-cobalt-soft px-2.5 py-1 font-mono text-[11px] text-cobalt">
-                    Weight {(DIMENSION_WEIGHTS[key] * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -131,19 +180,39 @@ export default async function HomePage() {
         </Reveal>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((s, i) => (
-            <Reveal key={s.n} delay={i * 0.06}>
-              <div className="h-full rounded-xl border border-line bg-card p-5">
-                <span className="font-mono text-[11px] text-cobalt">{s.n}</span>
-                <div className="mt-1.5 text-sm font-medium text-ink">
-                  {s.title}
+          {STEPS.map((s, i) => {
+            const accent = ACCENT[ACCENT_ORDER[i % ACCENT_ORDER.length]];
+            const isLast = i === STEPS.length - 1;
+            return (
+              <Reveal key={s.n} delay={i * 0.06}>
+                <div
+                  className={`group relative h-full overflow-hidden rounded-xl border border-line bg-card p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                >
+                  <span
+                    className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
+                    >
+                      {s.n}
+                    </span>
+                    {!isLast && (
+                      <span className="font-mono text-[11px] text-faint opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        next →
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1.5 text-sm font-medium text-ink">
+                    {s.title}
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+                    {s.desc}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
-                  {s.desc}
-                </p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
 
         <Reveal delay={0.2} className="mt-4">
@@ -253,12 +322,15 @@ export default async function HomePage() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {ENGINES.map((e, i) => (
               <Reveal key={e.name} delay={i * 0.07}>
-                <div className="h-full rounded-xl border border-[#282824] bg-[#161614] p-5">
+                <div className="group relative h-full overflow-hidden rounded-xl border border-[#282824] bg-[#161614] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[#7a9cff]/40 hover:shadow-[0_16px_36px_-18px_rgba(122,156,255,0.35)]">
+                  <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl bg-[#7a9cff] transition-transform duration-300 group-hover:scale-x-100" />
                   <span className="inline-block rounded-full border border-[#302f2a] px-2.5 py-1 font-mono text-[10.5px] text-[#A3A29B]">
                     {e.tag}
                   </span>
                   <div className="mt-3 flex items-center gap-2.5">
-                    <span className="text-lg">{e.icon}</span>
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#302f2a] bg-[#1b1b18] text-[#7a9cff] transition-transform duration-300 group-hover:scale-110">
+                      <SourceIcon kind={e.icon} />
+                    </span>
                     <h3 className="text-sm font-medium text-white">{e.name}</h3>
                   </div>
                   <p className="mt-2 text-[12.5px] leading-relaxed text-[#B5B2A6]">
@@ -344,7 +416,7 @@ function StarLegendCard({
   desc: string;
 }) {
   return (
-    <div className="h-full rounded-xl border border-line bg-card p-5">
+    <div className="card-hover h-full rounded-xl border border-line bg-card p-5">
       <span className="font-mono text-sm text-gold">
         {'★'.repeat(stars)}
         {'☆'.repeat(3 - stars)}
@@ -360,7 +432,7 @@ function StarLegendCard({
 
 function TrustItem({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="rounded-xl border border-line-soft bg-panel p-5">
+    <div className="card-hover rounded-xl border border-line-soft bg-panel p-5">
       <div className="text-sm font-medium text-ink">{title}</div>
       <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{desc}</p>
     </div>

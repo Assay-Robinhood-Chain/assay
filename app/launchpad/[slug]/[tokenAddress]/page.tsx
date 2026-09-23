@@ -8,6 +8,7 @@ import {
 } from '@/lib/supabase/queries';
 import { formatDate, formatMultiple, formatUsd } from '@/lib/scoring';
 import Reveal from '@/components/Reveal';
+import { PageIcon } from '@/components/icons/PageIcon';
 
 export async function generateStaticParams() {
   return (await getLaunchpads()).flatMap((lp) =>
@@ -60,7 +61,7 @@ export default async function TokenDetailPage({
       </Link>
 
       <Reveal>
-        <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
+        <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wide text-faint">
@@ -81,21 +82,32 @@ export default async function TokenDetailPage({
         </div>
       </Reveal>
 
-      <Reveal delay={0.05} className="mt-6">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCell
-            label="Peak multiple"
-            value={formatMultiple(launch.peakMultiple)}
-          />
-          <StatCell label="Liquidity" value={formatUsd(launch.liquidityUsd)} />
-          <StatCell label="24h volume" value={formatUsd(launch.volume24hUsd)} />
-          <StatCell label="Launched" value={formatDate(launch.launchDate)} />
-        </div>
-      </Reveal>
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          {
+            label: 'Peak multiple',
+            value: formatMultiple(launch.peakMultiple),
+          },
+          { label: 'Liquidity', value: formatUsd(launch.liquidityUsd) },
+          { label: '24h volume', value: formatUsd(launch.volume24hUsd) },
+          { label: 'Launched', value: formatDate(launch.launchDate) },
+        ].map((s, i) => (
+          <Reveal
+            key={s.label}
+            delay={0.05 + i * 0.04}
+            className={i % 2 === 1 ? 'sm:mt-3' : ''}
+          >
+            <StatCell label={s.label} value={s.value} />
+          </Reveal>
+        ))}
+      </div>
 
-      <Reveal delay={0.1} className="mt-6">
-        <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
+      <Reveal delay={0.25} className="mt-6">
+        <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+            <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="flag" size={14} />
+            </span>
             Status &amp; flags
           </h2>
           <dl className="divide-y divide-line-soft text-[13px]">
@@ -132,7 +144,7 @@ export default async function TokenDetailPage({
 
 function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-card p-4 text-center">
+    <div className="card-hover rounded-xl border border-line bg-card p-4 text-center">
       <div className="font-mono text-lg font-semibold text-ink">{value}</div>
       <div className="mt-1 text-[11px] uppercase tracking-wide text-faint">
         {label}

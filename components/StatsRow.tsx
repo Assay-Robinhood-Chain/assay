@@ -25,7 +25,7 @@ export default function StatsRow({ items }: { items: StatItem[] }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: i * 0.05 }}
-          className="bg-card px-4 py-4 sm:px-5"
+          className="bg-card px-4 py-4 transition-colors duration-300 hover:bg-panel/60 sm:px-5"
         >
           <div className={`font-mono text-xl font-semibold ${TONE_CLASS[it.tone ?? "default"]}`}>
             {it.value}

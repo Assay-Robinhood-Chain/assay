@@ -3,7 +3,55 @@
 import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Reveal from '@/components/Reveal';
+import { PageIcon, type PageIconKind } from '@/components/icons/PageIcon';
 import { createClient } from '@/lib/supabase/client';
+
+/** Same accent treatment as the homepage's "method" / "How Assay works"
+ * cards — border tint + glow shadow on hover, plus a top bar that wipes
+ * in — cycled per card so neighbours never repeat the same accent. */
+type Accent = 'cobalt' | 'up' | 'gold';
+const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
+const ACCENT: Record<
+  Accent,
+  { pill: string; border: string; glow: string; bar: string }
+> = {
+  cobalt: {
+    pill: 'bg-cobalt-soft text-cobalt',
+    border: 'hover:border-cobalt/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
+    bar: 'bg-cobalt',
+  },
+  up: {
+    pill: 'bg-up-soft text-up',
+    border: 'hover:border-up/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
+    bar: 'bg-up',
+  },
+  gold: {
+    pill: 'bg-gold-soft text-gold',
+    border: 'hover:border-gold/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
+    bar: 'bg-gold',
+  },
+};
+
+const PROCESS_STEPS: { icon: PageIconKind; title: string; blurb: string }[] = [
+  {
+    icon: 'send',
+    title: 'Submit',
+    blurb: 'Add a launchpad, claim one, or correct a field.',
+  },
+  {
+    icon: 'review',
+    title: 'Peer review',
+    blurb: 'A human moderator checks it — never the score.',
+  },
+  {
+    icon: 'checkCircle',
+    title: 'Reflected live',
+    blurb: 'Approved changes appear on the launchpad page.',
+  },
+];
 
 const CATEGORY_OPTIONS = [
   { value: 'new_launchpad', label: 'New Launchpad (not yet tracked)' },
@@ -244,7 +292,8 @@ export default function SubmitPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
-        <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+        <p className="mb-3 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+          <PageIcon kind="send" size={13} />
           Get listed
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
@@ -259,10 +308,44 @@ export default function SubmitPage() {
         </p>
       </Reveal>
 
+      {/* Process strip — staggered entrance, level grid (aligned with Rankings' strip) */}
+      <div className="mt-7 grid gap-3 sm:grid-cols-3">
+        {PROCESS_STEPS.map((s, i) => {
+          const accent = ACCENT[ACCENT_ORDER[i % ACCENT_ORDER.length]];
+          return (
+            <Reveal key={s.title} delay={0.05 + i * 0.06}>
+              <div
+                className={`group relative flex items-start gap-3 overflow-hidden rounded-xl border border-line bg-card p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+              >
+                <span
+                  className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
+                />
+                <span
+                  className={`icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg font-mono text-[11px] font-semibold transition-colors duration-300 ${accent.pill}`}
+                >
+                  <PageIcon kind={s.icon} size={15} />
+                </span>
+                <div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+                    <span className="font-mono text-[10.5px] text-faint">
+                      0{i + 1}
+                    </span>
+                    {s.title}
+                  </div>
+                  <p className="mt-0.5 text-[11.5px] leading-snug text-muted">
+                    {s.blurb}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          );
+        })}
+      </div>
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         {/* Left — the form */}
         <Reveal delay={0.06}>
-          <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
             <AnimatePresence mode="wait">
               {status === 'done' ? (
                 <motion.div
@@ -489,7 +572,7 @@ export default function SubmitPage() {
 
         {/* Right — live request payload preview */}
         <Reveal delay={0.12}>
-          <div className="h-full rounded-2xl border border-line bg-panel p-6 font-mono text-[12.5px] leading-relaxed sm:p-8">
+          <div className="card-hover h-full rounded-2xl border border-line bg-panel p-6 font-mono text-[12.5px] leading-relaxed sm:p-8">
             <div className="mb-4 flex items-center gap-2 text-ink-soft">
               <span className="h-1.5 w-1.5 rounded-full bg-up" />
               <span>POST /submissions</span>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import BackfillCalculator from '@/components/BackfillCalculator';
+import { PageIcon } from '@/components/icons/PageIcon';
 import {
   DIMENSION_LABELS,
   DIMENSION_WEIGHTS,
@@ -14,6 +15,33 @@ import {
   SCORE_DISCLAIMER,
 } from '@/lib/constants';
 import { DimensionKey } from '@/lib/types';
+
+/** Same accent treatment as the homepage's "method" / "How Assay works"
+ * cards — border tint + glow shadow on hover, plus a top bar that wipes
+ * in on hover. */
+type Accent = 'cobalt' | 'up' | 'gold' | 'down';
+const ACCENT: Record<Accent, { border: string; glow: string; bar: string }> = {
+  cobalt: {
+    border: 'hover:border-cobalt/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
+    bar: 'bg-cobalt',
+  },
+  up: {
+    border: 'hover:border-up/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
+    bar: 'bg-up',
+  },
+  gold: {
+    border: 'hover:border-gold/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
+    bar: 'bg-gold',
+  },
+  down: {
+    border: 'hover:border-down/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--down)]',
+    bar: 'bg-down',
+  },
+};
 
 export const metadata: Metadata = {
   title: 'Methodology — Assay',
@@ -53,26 +81,62 @@ export default function MethodologyPage() {
         </p>
       </Reveal>
 
-      {/* No paid placement */}
-      <Reveal delay={0.05} className="mt-10">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">
-            No paid placement, ever
-          </h2>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
-            The scoring tables carry no relationship to any billing or customer
-            record. A launchpad paying for a report about itself cannot touch
-            its own final score — enforced at the schema level, not by an
-            internal policy someone could quietly waive.
-          </p>
-        </section>
-      </Reveal>
+      {/* Trust pair — no paid placement + independence, side by side */}
+      <div className="mt-10 grid gap-6 md:grid-cols-2">
+        <Reveal delay={0.05}>
+          <section
+            className={`group relative h-full overflow-hidden rounded-2xl border border-line bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.cobalt.border} ${ACCENT.cobalt.glow}`}
+          >
+            <span
+              className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
+            />
+            <div className="icon-chip mb-3 grid h-9 w-9 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="shield" size={17} />
+            </div>
+            <h2 className="text-lg font-semibold text-ink">
+              No paid placement, ever
+            </h2>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
+              The scoring tables carry no relationship to any billing or
+              customer record. A launchpad paying for a report about itself
+              cannot touch its own final score — enforced at the schema level,
+              not by an internal policy someone could quietly waive.
+            </p>
+          </section>
+        </Reveal>
+
+        <Reveal delay={0.1} className="md:mt-5">
+          <section
+            className={`group relative h-full overflow-hidden rounded-2xl border border-line bg-card p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.up.border} ${ACCENT.up.glow}`}
+          >
+            <span
+              className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.up.bar}`}
+            />
+            <div className="icon-chip mb-3 grid h-9 w-9 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="shieldCheck" size={17} />
+            </div>
+            <h2 className="text-lg font-semibold text-ink">
+              Independent, not self-reported
+            </h2>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
+              Scoring only ever reads third-party market data and on-chain
+              facts. Anything a launchpad submits about itself is a distinct
+              data type that cannot satisfy the interface the Scorer reads from
+              — it cannot leak into a score by accident, only by someone
+              deliberately changing the type.
+            </p>
+          </section>
+        </Reveal>
+      </div>
 
       {/* 5 dimensions — Composite Weighting */}
       <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
+        <section className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold text-ink">
+            <h2 className="flex items-center gap-2.5 text-lg font-semibold text-ink">
+              <span className="icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+                <PageIcon kind="sliders" size={15} />
+              </span>
               Composite Weighting
             </h2>
           </div>
@@ -116,8 +180,13 @@ export default function MethodologyPage() {
 
       {/* Star thresholds */}
       <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">Star thresholds</h2>
+        <section className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-ink">
+            <span className="icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gold-soft text-gold">
+              <PageIcon kind="tiers" size={15} />
+            </span>
+            Star thresholds
+          </h2>
           <div className="mt-4 grid grid-cols-4 gap-3 text-center">
             <ThresholdCell
               label="0–1★"
@@ -150,8 +219,13 @@ export default function MethodologyPage() {
 
       {/* Confidence gating */}
       <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">Cold-start honesty</h2>
+        <section className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-ink">
+            <span className="icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="hourglass" size={15} />
+            </span>
+            Cold-start honesty
+          </h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
             A launchpad with a tracked sample below{' '}
             <span className="font-mono text-[13px]">
@@ -177,8 +251,11 @@ export default function MethodologyPage() {
 
       {/* Backfill sampling policy */}
       <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">
+        <section className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <h2 className="flex items-center gap-2.5 text-lg font-semibold text-ink">
+            <span className="icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="stack" size={15} />
+            </span>
             Initial backfill sampling
           </h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
@@ -244,22 +321,6 @@ export default function MethodologyPage() {
         </section>
       </Reveal>
 
-      {/* Independence */}
-      <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-ink">
-            Independent, not self-reported
-          </h2>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
-            Scoring only ever reads third-party market data and on-chain facts.
-            Anything a launchpad submits about itself is a distinct data type
-            that cannot satisfy the interface the Scorer reads from — it cannot
-            leak into a score by accident, only by someone deliberately changing
-            the type.
-          </p>
-        </section>
-      </Reveal>
-
       <Reveal delay={0.05} className="mt-10">
         <p className="text-[12px] leading-relaxed text-faint">
           {SCORE_DISCLAIMER}
@@ -283,8 +344,14 @@ function ThresholdCell({
     gold: 'bg-gold-soft text-gold',
     down: 'bg-down-soft text-down',
   }[tone];
+  const accent = ACCENT[tone];
   return (
-    <div className={`rounded-lg px-2 py-3 ${cls}`}>
+    <div
+      className={`group relative overflow-hidden rounded-lg border border-transparent px-2 py-3 transition-all duration-300 ease-out hover:-translate-y-1 ${cls} ${accent.border} ${accent.glow}`}
+    >
+      <span
+        className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
+      />
       <div className="font-mono text-sm font-semibold">{label}</div>
       <div className="mt-0.5 font-mono text-[11px] opacity-80">{range}</div>
     </div>
