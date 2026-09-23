@@ -19,16 +19,23 @@ export const MIN_BACKFILL_FULL_THRESHOLD = 100;
 export const MAX_BACKFILL_SAMPLE = 250;
 export const BACKFILL_SAMPLE_RATIO = 0.5;
 
-export const ALGORITHM_VERSION = "v1.3";
+export const ALGORITHM_VERSION = 'v1.3';
+
+// SSRF-safe fetch (see ssrfSafeFetch.ts) and submission rate limiting
+export const URL_FETCH_TIMEOUT_MS = 8000;
+export const URL_FETCH_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_REDIRECT_HOPS = 3;
+export const SUBMISSION_RATE_LIMIT_PER_HOUR = 5; // per launchpad_submissions
+export const REPORT_RATE_LIMIT_PER_HOUR = 10; // per community_reports (higher — cheaper to file)
 
 export const SCORE_DISCLAIMER =
-  "Scores are informational only and do not constitute financial, investment, or legal advice. Assay is not a registered investment adviser. Scores describe historical, on-chain patterns — not predictions about any specific future token. Conduct independent research before making any decision.";
+  'Scores are informational only and do not constitute financial, investment, or legal advice. Assay is not a registered investment adviser. Scores describe historical, on-chain patterns — not predictions about any specific future token. Conduct independent research before making any decision.';
 
 export function computeBackfillSample(totalLaunches: number): number {
   if (totalLaunches < MIN_BACKFILL_FULL_THRESHOLD) return totalLaunches;
   return Math.min(
     MAX_BACKFILL_SAMPLE,
-    Math.ceil(totalLaunches * BACKFILL_SAMPLE_RATIO)
+    Math.ceil(totalLaunches * BACKFILL_SAMPLE_RATIO),
   );
 }
 

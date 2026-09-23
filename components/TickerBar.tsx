@@ -1,22 +1,30 @@
-import { getLaunchpads } from "@/lib/data";
-import { rampColor } from "@/lib/scoring";
+import { getLaunchpads } from '@/lib/supabase/queries';
+import { rampColor } from '@/lib/scoring';
 
 const RAMP_CLASSES: Record<string, string> = {
-  green: "text-up",
-  amber: "text-gold",
-  red: "text-down",
+  green: 'text-up',
+  amber: 'text-gold',
+  red: 'text-down',
 };
 
 const TAGLINES = [
   "We don't cover launchpads. We audit them.",
-  "Confidence is cheap. We priced in the doubt.",
+  'Confidence is cheap. We priced in the doubt.',
   "That isn't oversight. That's the fox doing inventory on the henhouse.",
   "Nothing here is a compliment. It's a measurement.",
   "We don't flatter launchpads into looking safe.",
-  "Measured, not marketed.",
+  'Measured, not marketed.',
 ];
 
-function ScoreItem({ name, score, stars }: { name: string; score: number; stars: number }) {
+function ScoreItem({
+  name,
+  score,
+  stars,
+}: {
+  name: string;
+  score: number;
+  stars: number;
+}) {
   const color = rampColor(score);
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -24,8 +32,8 @@ function ScoreItem({ name, score, stars }: { name: string; score: number; stars:
       <span className="text-ink-soft">{name}</span>
       <span className={RAMP_CLASSES[color]}>{score.toFixed(1)}</span>
       <span className="text-faint">
-        {"★".repeat(stars)}
-        {"☆".repeat(3 - stars)}
+        {'★'.repeat(stars)}
+        {'☆'.repeat(3 - stars)}
       </span>
     </span>
   );
@@ -35,8 +43,10 @@ function ScoreItem({ name, score, stars }: { name: string; score: number; stars:
 // the app does, so the ticker's score readout never drifts from what
 // /rankings shows. Interleaved with the editorial taglines from the
 // original design so it reads as commentary, not just a stock ticker.
-export default function TickerBar() {
-  const launchpads = getLaunchpads().filter((lp) => !lp.score.isProvisional);
+export default async function TickerBar() {
+  const launchpads = (await getLaunchpads()).filter(
+    (lp) => !lp.score.isProvisional,
+  );
 
   const items: React.ReactNode[] = [];
   const n = Math.max(TAGLINES.length, launchpads.length);
@@ -46,13 +56,18 @@ export default function TickerBar() {
         <span key={`t-${i}`} className="inline-flex items-center gap-1.5">
           <span className="text-gold">✦</span>
           {TAGLINES[i]}
-        </span>
+        </span>,
       );
     }
     const lp = launchpads[i];
     if (lp) {
       items.push(
-        <ScoreItem key={lp.slug} name={lp.name} score={lp.score.finalScore} stars={lp.score.stars} />
+        <ScoreItem
+          key={lp.slug}
+          name={lp.name}
+          score={lp.score.finalScore}
+          stars={lp.score.stars}
+        />,
       );
     }
   }

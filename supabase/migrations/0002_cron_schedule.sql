@@ -3,6 +3,22 @@
 -- Run this AFTER deploying the 3 Edge Functions in supabase/functions/
 -- and setting CRON_SECRET as an Edge Function secret.
 -- Replace <PROJECT_REF> below with your project's ref (Settings > General).
+--
+-- IMPORTANT — one manual step before this file works:
+-- The Edge Functions read CRON_SECRET from `Deno.env.get("CRON_SECRET")`
+-- (a Supabase Edge Function secret). The cron jobs below need the SAME
+-- value available to plain SQL, which Edge Function secrets are NOT —
+-- they live in a completely separate store. Supabase Vault is the
+-- correct place to put a secret that both SQL and a human need to
+-- read. Run this once, in the SQL Editor, with your REAL generated
+-- secret (the same one you passed to `supabase secrets set CRON_SECRET=...`):
+--
+--   select vault.create_secret('<your-generated-cron-secret>', 'cron_secret');
+--
+-- Do NOT hardcode the real secret directly into this migration file —
+-- unlike <PROJECT_REF> below (not sensitive), this value must never be
+-- committed to git. Run the vault.create_secret() call by hand, once,
+-- outside version control.
 -- ============================================================
 
 create extension if not exists pg_cron;
@@ -17,10 +33,10 @@ select cron.schedule(
   '0 * * * *',  -- every hour, on the hour
   $$
   select net.http_post(
-    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/ingestion-rotation',
+    url := 'https://fkkfcdiwpfyqzzlfhuyu.supabase.co/functions/v1/ingestion-rotation',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-cron-secret', current_setting('app.settings.cron_secret', true)
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
     ),
     body := '{}'::jsonb
   );
@@ -35,10 +51,10 @@ select cron.schedule(
   '0 3 * * *',  -- daily at 03:00 UTC
   $$
   select net.http_post(
-    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/scoring-sweep',
+    url := 'https://fkkfcdiwpfyqzzlfhuyu.supabase.co/functions/v1/scoring-sweep',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-cron-secret', current_setting('app.settings.cron_secret', true)
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
     ),
     body := '{}'::jsonb
   );

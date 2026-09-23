@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+// Stays on the mock dataset on purpose: this is a Client Component, and
+// lib/supabase/queries.ts is server-only (it reads cookies() via
+// next/headers), so it cannot be imported here. Wire this to Supabase
+// through an API route (e.g. app/api/launchpads/route.ts) if/when the
+// registry dropdown needs live data.
 import { getLaunchpads } from '@/lib/data';
 import { rampColor, formatDate } from '@/lib/scoring';
 import { TARGET_CHAIN, MIN_SAMPLE_SIZE_FOR_CONFIDENCE } from '@/lib/constants';

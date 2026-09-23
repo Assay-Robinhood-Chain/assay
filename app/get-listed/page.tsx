@@ -1,9 +1,8 @@
 'use client';
 
-import { useMemo, useState, FormEvent } from 'react';
+import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Reveal from '@/components/Reveal';
-import { getLaunchpads } from '@/lib/data';
 import { createClient } from '@/lib/supabase/client';
 
 const CATEGORY_OPTIONS = [
@@ -18,39 +17,177 @@ const CATEGORY_OPTIONS = [
   { value: 'note', label: 'General Correction or Note' },
 ];
 
+// Categories that map onto one specific, already-tracked field on the
+// launchpad row (see lib/supabase/queries.ts's LaunchpadRow) rather than
+// being a free-text note about it. For these, the form shows a dedicated
+// input — pre-labelled with the launchpad's current value — instead of
+// asking the submitter to describe the change in prose. Kept in the same
+// "Factory: X; Website: Y" shape app/api/admin/moderation/route.ts's
+// parseNewLaunchpadValue() already parses for new_launchpad, so the same
+// parser lifts these updates too once approved.
+const FIELD_UPDATE_CONFIG: Record<
+  string,
+  { label: string; placeholder: string; prefixKey: 'Website' | 'Factory' }
+> = {
+  website_docs: {
+    label: 'New Website URL',
+    placeholder: 'https://…',
+    prefixKey: 'Website',
+  },
+  deployer_address: {
+    label: 'New Deployer / Factory Address',
+    placeholder: '0x…',
+    prefixKey: 'Factory',
+  },
+};
+
 const NEW_LAUNCHPAD_VALUE = '__new__';
 
+interface LaunchpadOption {
+  slug: string;
+  name: string;
+  websiteUrl: string | null;
+  deployerAddresses: string[];
+  finalScore: number;
+  stars: 0 | 1 | 2 | 3;
+}
+
 export default function SubmitPage() {
-  const launchpads = useMemo(() => getLaunchpads(), []);
+  const [launchpads, setLaunchpads] = useState<LaunchpadOption[]>([]);
+  const [launchpadsLoading, setLaunchpadsLoading] = useState(true);
+  const [launchpadsError, setLaunchpadsError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
-  const [launchpad, setLaunchpad] = useState(
-    launchpads[0]?.slug ?? NEW_LAUNCHPAD_VALUE,
-  );
+  // Starts empty rather than defaulting to the first mock entry — the
+  // real list only exists once /api/launchpads resolves (see the
+  // effect below), and there's no "first" launchpad to assume before then.
+  const [launchpad, setLaunchpad] = useState<string>('');
   const [newLaunchpadName, setNewLaunchpadName] = useState('');
+  const [factoryAddress, setFactoryAddress] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0].value);
+  const [fieldValue, setFieldValue] = useState(''); // structured update, see FIELD_UPDATE_CONFIG
   const [context, setContext] = useState('');
   const [contact, setContact] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/launchpads');
+        const body = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(
+            body?.error?.message ?? `Request failed (${res.status})`,
+          );
+        }
+        if (cancelled) return;
+        const list: LaunchpadOption[] = body.launchpads ?? [];
+        setLaunchpads(list);
+        // Only claim the first real launchpad as the default when the
+        // selector hasn't been touched yet — never stomp a choice the
+        // person already made while this was loading.
+        setLaunchpad(
+          (current) => current || list[0]?.slug || NEW_LAUNCHPAD_VALUE,
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setLaunchpadsError(
+            err instanceof Error ? err.message : 'Failed to load launchpads.',
+          );
+          setLaunchpad((current) => current || NEW_LAUNCHPAD_VALUE);
+        }
+      } finally {
+        if (!cancelled) setLaunchpadsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const isNewLaunchpad = launchpad === NEW_LAUNCHPAD_VALUE;
   const launchpadLabel = isNewLaunchpad ? newLaunchpadName || null : launchpad;
+  const selectedLaunchpad = useMemo(
+    () => launchpads.find((lp) => lp.slug === launchpad) ?? null,
+    [launchpads, launchpad],
+  );
+  const fieldUpdate = !isNewLaunchpad
+    ? FIELD_UPDATE_CONFIG[category]
+    : undefined;
+  const currentFieldValue = !fieldUpdate
+    ? null
+    : fieldUpdate.prefixKey === 'Website'
+      ? (selectedLaunchpad?.websiteUrl ?? null)
+      : (selectedLaunchpad?.deployerAddresses[0] ?? null);
+
+  // Category options depend on which "Launchpad" is selected above —
+  // "New Launchpad (not yet tracked)" only makes sense together with
+  // "+ New launchpad" up there, and MUST be paired with it. Without
+  // this, picking an existing launchpad while the category defaulted
+  // to "new_launchpad" produced a submission with field: 'new_launchpad'
+  // but no Factory Contract Address (that input only renders when
+  // isNewLaunchpad is true) — app/api/admin/moderation/route.ts's
+  // onboardApprovedLaunchpad() only checks submission.field, so it
+  // happily inserted a launchpad with deployer_addresses: [], which is
+  // exactly the bug that left noxa-fun/pools-trade stuck at
+  // sample_size 0 / a 422 on backfill. Decoupling was the actual root
+  // cause, not the parsing or the required-field check.
+  const categoryOptions = isNewLaunchpad
+    ? CATEGORY_OPTIONS.filter((c) => c.value === 'new_launchpad')
+    : CATEGORY_OPTIONS.filter((c) => c.value !== 'new_launchpad');
+
+  // Keep `category` valid whenever `launchpad` flips between "+ New"
+  // and an existing entry, instead of leaving a stale selection that
+  // no longer belongs on the visible list.
+  useEffect(() => {
+    if (!categoryOptions.some((c) => c.value === category)) {
+      setCategory(categoryOptions[0].value);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNewLaunchpad]);
+
+  // Reset the structured field value whenever the category or the
+  // selected launchpad changes, so a leftover website URL typed for one
+  // launchpad never gets silently submitted against a different one.
+  useEffect(() => {
+    setFieldValue('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, launchpad]);
+
+  // What actually gets written to the `value` column. For a structured
+  // field update this prepends "Website: X;" / "Factory: X;" — the same
+  // shape parseNewLaunchpadValue() already looks for — so an admin
+  // approval can apply it directly instead of re-typing it by hand.
+  const composedValue = fieldUpdate
+    ? `${fieldUpdate.prefixKey}: ${fieldValue};${context ? ` ${context}` : ''}`
+    : isNewLaunchpad
+      ? `Factory: ${factoryAddress};${websiteUrl ? ` Website: ${websiteUrl};` : ''} ${context}`
+      : context;
 
   const payload = {
     launchpad: launchpadLabel,
     category,
-    context: context || null,
+    context: composedValue || null,
     contact: contact || null,
     status: 'pending',
     ...(submittedAt ? { submitted_at: submittedAt } : {}),
   };
 
-  const hasAnyInput = Boolean(launchpadLabel || context || contact);
+  const hasAnyInput = Boolean(
+    launchpadLabel || context || contact || fieldValue,
+  );
+
+  const canSubmit =
+    Boolean(launchpadLabel) &&
+    (isNewLaunchpad ? Boolean(factoryAddress) : true) &&
+    (fieldUpdate ? Boolean(fieldValue) : Boolean(context));
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!launchpadLabel || !context) return;
+    if (!canSubmit) return;
     setStatus('submitting');
     setErrorMsg(null);
 
@@ -58,6 +195,7 @@ export default function SubmitPage() {
     // category IS the field being submitted about.
     const field = category;
     const slug = isNewLaunchpad ? newLaunchpadName : launchpad;
+    const value = composedValue;
 
     // Writes directly to launchpad_submissions. RLS (see
     // supabase/migrations/0001_init.sql) allows a public INSERT only
@@ -78,7 +216,7 @@ export default function SubmitPage() {
     const { error } = await supabase.from('launchpad_submissions').insert({
       launchpad_slug: slug,
       field,
-      value: context,
+      value,
       submitted_by: contact || null,
     });
 
@@ -96,6 +234,9 @@ export default function SubmitPage() {
     setContext('');
     setContact('');
     setNewLaunchpadName('');
+    setFactoryAddress('');
+    setWebsiteUrl('');
+    setFieldValue('');
     setSubmittedAt(null);
     setErrorMsg(null);
   }
@@ -164,17 +305,27 @@ export default function SubmitPage() {
                     <select
                       value={launchpad}
                       onChange={(e) => setLaunchpad(e.target.value)}
-                      className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                      disabled={launchpadsLoading}
+                      className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt disabled:opacity-60"
                     >
+                      <option value={NEW_LAUNCHPAD_VALUE}>
+                        + New launchpad (not yet tracked)
+                      </option>
+                      {launchpadsLoading && (
+                        <option>Loading launchpads…</option>
+                      )}
                       {launchpads.map((lp) => (
                         <option key={lp.slug} value={lp.slug}>
                           {lp.name}
                         </option>
                       ))}
-                      <option value={NEW_LAUNCHPAD_VALUE}>
-                        + New launchpad (not yet tracked)
-                      </option>
                     </select>
+                    {launchpadsError && (
+                      <p className="mt-1.5 text-[11.5px] text-down">
+                        Couldn't load the live launchpad list ({launchpadsError}
+                        ) — you can still submit a new launchpad below.
+                      </p>
+                    )}
                   </div>
 
                   {isNewLaunchpad && (
@@ -192,6 +343,40 @@ export default function SubmitPage() {
                     </div>
                   )}
 
+                  {isNewLaunchpad && (
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
+                        Factory Contract Address
+                      </label>
+                      <input
+                        required
+                        value={factoryAddress}
+                        onChange={(e) => setFactoryAddress(e.target.value)}
+                        placeholder="0x…"
+                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 font-mono text-sm text-ink outline-none focus-visible:border-cobalt"
+                      />
+                      <p className="mt-1.5 text-[11.5px] text-faint">
+                        Required for a new launchpad — this is what lets Assay
+                        discover and count its token launches. Without it, the
+                        listing gets added but can never be scored.
+                      </p>
+                    </div>
+                  )}
+
+                  {isNewLaunchpad && (
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
+                        Website (optional)
+                      </label>
+                      <input
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        placeholder="https://…"
+                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="mb-1.5 block text-[13px] font-semibold text-ink">
                       Information Category
@@ -201,7 +386,7 @@ export default function SubmitPage() {
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
                     >
-                      {CATEGORY_OPTIONS.map((c) => (
+                      {categoryOptions.map((c) => (
                         <option key={c.value} value={c.value}>
                           {c.label}
                         </option>
@@ -209,12 +394,47 @@ export default function SubmitPage() {
                     </select>
                   </div>
 
+                  {/* Structured update — only for categories that map onto one
+                      specific tracked field (see FIELD_UPDATE_CONFIG above). */}
+                  {fieldUpdate && (
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
+                        {fieldUpdate.label}
+                      </label>
+                      <input
+                        required
+                        value={fieldValue}
+                        onChange={(e) => setFieldValue(e.target.value)}
+                        placeholder={fieldUpdate.placeholder}
+                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 font-mono text-sm text-ink outline-none focus-visible:border-cobalt"
+                      />
+                      <p className="mt-1.5 text-[11.5px] text-faint">
+                        {selectedLaunchpad ? (
+                          currentFieldValue ? (
+                            <>
+                              Currently on file:{' '}
+                              <span className="font-mono">
+                                {currentFieldValue}
+                              </span>
+                            </>
+                          ) : (
+                            'Nothing on file yet for this launchpad.'
+                          )
+                        ) : (
+                          'Select a launchpad above to see its current value.'
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                      Context / Supporting Links
+                      {fieldUpdate
+                        ? 'Additional Context (optional)'
+                        : 'Context / Supporting Links'}
                     </label>
                     <textarea
-                      required
+                      required={!fieldUpdate}
                       rows={4}
                       value={context}
                       onChange={(e) => setContext(e.target.value)}
@@ -254,9 +474,7 @@ export default function SubmitPage() {
 
                   <button
                     type="submit"
-                    disabled={
-                      status === 'submitting' || !context || !launchpadLabel
-                    }
+                    disabled={status === 'submitting' || !canSubmit}
                     className="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {status === 'submitting'

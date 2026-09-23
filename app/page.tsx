@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Hero from '@/components/Hero';
 import Reveal from '@/components/Reveal';
 import TopRankedPreview from '@/components/TopRankedPreview';
-import { getLaunchpads } from '@/lib/data';
+import { getLaunchpads } from '@/lib/supabase/queries';
 import {
   TARGET_CHAIN,
   MIN_BACKFILL_FULL_THRESHOLD,
@@ -69,8 +69,8 @@ const STEPS = [
   },
 ];
 
-export default function HomePage() {
-  const launchpads = getLaunchpads();
+export default async function HomePage() {
+  const launchpads = await getLaunchpads();
 
   return (
     <>

@@ -1,34 +1,20 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from '@supabase/supabase-js';
 
-/** Server-side client for Server Components. Reads with the anon key —
- * RLS policies in supabase/migrations/0001_init.sql already make
- * every scored table public, so this needs no auth. Never use the
- * service role key here; that belongs only in Edge Functions
- * (supabase/functions/_shared/supabaseAdmin.ts). */
+/** Read-only client for Server Components, Route Handlers, and build-time
+ * contexts (generateStaticParams) alike. Reads with the anon key — RLS
+ * policies in supabase/migrations/0001_init.sql already make every
+ * scored table public, and Assay has no user sessions, so there's
+ * nothing a per-request cookie-aware client would add here. A plain
+ * client (no next/headers) also means this is safe to call from
+ * generateStaticParams, which runs at build time with no HTTP request
+ * to read cookies from. Never use the service role key here; that
+ * belongs only in Edge Functions (supabase/functions/_shared/supabaseAdmin.ts)
+ * and the admin API routes (lib/supabase/admin.ts). */
 export async function createServerSupabaseClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Called from a Server Component that can't set cookies —
-            // safe to ignore since Assay has no user sessions today.
-          }
-        },
-      },
-    }
+    { auth: { persistSession: false } },
   );
 }
 
@@ -38,6 +24,7 @@ export async function createServerSupabaseClient() {
  * building and running either way. */
 export function isSupabaseConfigured(): boolean {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 }
