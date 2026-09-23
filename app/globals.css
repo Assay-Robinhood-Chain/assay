@@ -144,6 +144,39 @@ body {
   }
 }
 
+.card-hover {
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: var(--cobalt);
+  box-shadow: 0 14px 32px -18px rgba(30, 77, 216, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card-hover:hover {
+    box-shadow: 0 14px 32px -16px rgba(122, 156, 255, 0.28);
+  }
+}
+
+:root[data-theme="dark"] .card-hover:hover {
+  box-shadow: 0 14px 32px -16px rgba(122, 156, 255, 0.28);
+}
+
+.icon-chip {
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.card-hover:hover .icon-chip {
+  background: var(--cobalt-soft);
+  color: var(--cobalt);
+  transform: scale(1.06);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

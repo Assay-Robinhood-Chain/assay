@@ -19,6 +19,7 @@ import {
   NotYetScored,
 } from '@/components/StatusLabels';
 import Reveal from '@/components/Reveal';
+import { PageIcon } from '@/components/icons/PageIcon';
 import { DimensionKey } from '@/lib/types';
 
 export async function generateStaticParams() {
@@ -62,7 +63,7 @@ export default async function LaunchpadDetailPage({
 
       {/* Header card */}
       <Reveal>
-        <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
+        <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
               <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-line bg-panel font-mono text-lg text-faint">
@@ -123,8 +124,11 @@ export default async function LaunchpadDetailPage({
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_1fr]">
         {/* Dimension breakdown */}
         <Reveal delay={0.05}>
-          <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">
+          <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+              <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+                <PageIcon kind="bars" size={14} />
+              </span>
               Score breakdown
             </h2>
             <div className="mt-2 divide-y divide-line-soft">
@@ -143,10 +147,13 @@ export default async function LaunchpadDetailPage({
         </Reveal>
 
         {/* Backfill + meta */}
-        <Reveal delay={0.1}>
-          <div className="flex h-full flex-col gap-5 rounded-2xl border border-line bg-card p-6 sm:p-8">
+        <Reveal delay={0.1} className="lg:mt-6">
+          <div className="card-hover flex h-full flex-col gap-5 rounded-2xl border border-line bg-card p-6 sm:p-8">
             <div>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-faint">
+              <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+                <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+                  <PageIcon kind="archive" size={14} />
+                </span>
                 Sample &amp; onboarding
               </h2>
               <BackfillNote
@@ -179,8 +186,11 @@ export default async function LaunchpadDetailPage({
 
       {/* Score history */}
       <Reveal delay={0.05} className="mt-8">
-        <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-faint">
+        <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+            <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <PageIcon kind="timeline" size={14} />
+            </span>
             Score history
           </h2>
           <ScoreHistoryChart points={lp.scoreHistory} />
@@ -190,15 +200,18 @@ export default async function LaunchpadDetailPage({
       {/* Badges */}
       {lp.badges.length > 0 && (
         <Reveal delay={0.05} className="mt-8">
-          <div className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-faint">
+          <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+              <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold-soft text-gold">
+                <PageIcon kind="medal" size={14} />
+              </span>
               Active badges
             </h2>
             <div className="flex flex-wrap gap-3">
-              {lp.badges.map((b) => (
+              {lp.badges.map((b, i) => (
                 <div
                   key={b.id}
-                  className="max-w-xs rounded-xl border border-line bg-panel px-4 py-3"
+                  className={`card-hover max-w-xs rounded-xl border border-line bg-panel px-4 py-3 ${i % 2 === 1 ? 'sm:mt-2' : ''}`}
                 >
                   <div className="text-[13px] font-medium text-ink">
                     {b.name}
@@ -220,7 +233,10 @@ export default async function LaunchpadDetailPage({
       <Reveal delay={0.05} className="mt-8">
         <div>
           <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-faint">
+              <span className="icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+                <PageIcon kind="list" size={14} />
+              </span>
               Tracked launches
             </h2>
             <span className="font-mono text-[12px] text-faint">

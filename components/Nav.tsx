@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
-import LaunchpadScanner from '@/components/LaunchpadScanner';
 
 const LINKS = [
   { href: '/', label: 'Home' },
@@ -70,12 +69,24 @@ export default function Nav() {
         <div className="hidden items-center gap-2.5 md:flex">
           <ThemeToggle />
           <Link
-            href="/rankings"
-            className="inline-flex shrink-0 items-center rounded-full border border-line bg-card px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:border-ink/30"
+            href="/get-listed"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-paper transition-opacity hover:opacity-90"
           >
-            Directory Table
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M16.2 16.2L21 21" />
+            </svg>
+            Open Launchpad Scanner
           </Link>
-          <LaunchpadScanner />
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -116,13 +127,25 @@ export default function Nav() {
               ))}
               <div className="mt-2 flex items-center gap-2.5 border-t border-line-soft pt-3">
                 <Link
-                  href="/rankings"
+                  href="/get-listed"
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center rounded-full border border-line bg-card px-4 py-2 text-[13px] font-medium text-ink"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-paper"
                 >
-                  Directory Table
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M16.2 16.2L21 21" />
+                  </svg>
+                  Open Launchpad Scanner
                 </Link>
-                <LaunchpadScanner />
               </div>
             </div>
           </motion.nav>

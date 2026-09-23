@@ -103,7 +103,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.55 }}
-          className="mx-auto w-full max-w-[340px] lg:max-w-[420px]"
+          className="mx-auto hidden w-full max-w-[340px] lg:block lg:max-w-[420px]"
         >
           <div className="relative flex flex-col items-center rounded-[20px] border border-line bg-card px-7 py-8 text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)]">
             <div className="relative mb-[18px] flex h-[140px] w-[140px] items-center justify-center">
@@ -121,31 +121,14 @@ export default function Hero() {
                 }}
                 className="absolute left-5 top-3.5 h-2.5 w-2.5 rounded-full bg-cobalt shadow-[0_0_10px_var(--cobalt)]"
               />
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-gold bg-[radial-gradient(circle,var(--gold-soft)_0%,transparent_70%)] text-gold shadow-[0_8px_24px_-6px_rgba(163,115,14,0.25)]">
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 100 100"
-                  fill="currentColor"
-                >
-                  <g transform="translate(50, 38)">
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="4.5"
-                    />
-                    <circle cx="0" cy="0" r="6" fill="currentColor" />
-                    <circle cx="0" cy="-22" r="3" fill="currentColor" />
-                    <circle cx="22" cy="0" r="3" fill="currentColor" />
-                    <circle cx="0" cy="22" r="3" fill="currentColor" />
-                    <circle cx="-22" cy="0" r="3" fill="currentColor" />
-                  </g>
-                  <rect x="47" y="52" width="6" height="34" rx="2" />
-                  <path d="M53 66 h 12 v 5 h -6 v 4 h 6 v 5 h -12 Z" />
-                </svg>
+              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-gold bg-[radial-gradient(circle,var(--gold-soft)_0%,transparent_70%)] shadow-[0_8px_24px_-6px_rgba(163,115,14,0.25)]">
+                <img
+                  src="/assay-seal-pixel.gif"
+                  alt="Assay Audit Seal"
+                  width={64}
+                  height={64}
+                  className="h-16 w-16 object-contain"
+                />
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import PipelineFlow from '@/components/PipelineFlow';
+import ActiveCollectors from '@/components/ActiveCollectors';
 import CoverageTable from '@/components/CoverageTable';
 import LiveFeed from '@/components/LiveFeed';
 import CronStatus from '@/components/CronStatus';
@@ -11,6 +12,35 @@ import {
   MIN_BACKFILL_FULL_THRESHOLD,
   MAX_BACKFILL_SAMPLE,
 } from '@/lib/constants';
+
+/** Same accent treatment as the homepage's "method" / "How Assay works"
+ * cards — border tint + glow shadow on hover, plus a top bar that wipes
+ * in — cycled per card so neighbours never repeat the same accent. */
+type Accent = 'cobalt' | 'up' | 'gold';
+const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
+const ACCENT: Record<
+  Accent,
+  { text: string; border: string; glow: string; bar: string }
+> = {
+  cobalt: {
+    text: 'text-cobalt',
+    border: 'hover:border-cobalt/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
+    bar: 'bg-cobalt',
+  },
+  up: {
+    text: 'text-up',
+    border: 'hover:border-up/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
+    bar: 'bg-up',
+  },
+  gold: {
+    text: 'text-gold',
+    border: 'hover:border-gold/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
+    bar: 'bg-gold',
+  },
+};
 
 export const metadata: Metadata = {
   title: 'Coverage — Assay',
@@ -52,21 +82,25 @@ export default async function CoveragePage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
             <FlowStep
               n="1"
+              accent={ACCENT[ACCENT_ORDER[0]]}
               title="Launchpad added"
               desc="Name, slug, deployer address recorded. Docs checked for a Bitquery/Mobula entry."
             />
             <FlowStep
               n="2"
+              accent={ACCENT[ACCENT_ORDER[1]]}
               title="Tokens discovered"
               desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else 50% capped at ${MAX_BACKFILL_SAMPLE} — most-recent-first.`}
             />
             <FlowStep
               n="3"
+              accent={ACCENT[ACCENT_ORDER[2]]}
               title="Scored"
               desc="5 weighted dimensions, clamped 0–100, gated by sample size before a star rating is shown."
             />
             <FlowStep
               n="4"
+              accent={ACCENT[ACCENT_ORDER[0]]}
               title="Kept current"
               desc="Hourly ingestion rotation + a daily scoring sweep — no manual step re-runs this."
             />
@@ -117,28 +151,7 @@ export default async function CoveragePage() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
           Active collectors
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {COLLECTORS.map((c) => (
-            <div
-              key={c.name}
-              className="rounded-xl border border-line bg-card p-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">{c.name}</span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-up">
-                  <span className="h-1.5 w-1.5 rounded-full bg-up" />
-                  online
-                </span>
-              </div>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
-                {c.provides}
-              </p>
-              <span className="mt-2 inline-block rounded-full border border-line-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-faint">
-                {c.role}
-              </span>
-            </div>
-          ))}
-        </div>
+        <ActiveCollectors />
       </Reveal>
 
       {/* Coverage table */}
@@ -175,14 +188,25 @@ function FlowStep({
   n,
   title,
   desc,
+  accent,
 }: {
   n: string;
   title: string;
   desc: string;
+  accent: { text: string; border: string; glow: string; bar: string };
 }) {
   return (
-    <div className="rounded-xl border border-line-soft bg-panel p-4">
-      <span className="font-mono text-[11px] text-cobalt">{n}</span>
+    <div
+      className={`group relative overflow-hidden rounded-xl border border-line-soft bg-panel p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+    >
+      <span
+        className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
+      />
+      <span
+        className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
+      >
+        {n}
+      </span>
       <div className="mt-1 text-[13px] font-medium text-ink">{title}</div>
       <p className="mt-1 text-[12px] leading-relaxed text-muted">{desc}</p>
     </div>

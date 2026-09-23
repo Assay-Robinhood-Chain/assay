@@ -64,7 +64,7 @@ function CronCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-card p-4">
+    <div className="card-hover rounded-xl border border-line bg-card p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
