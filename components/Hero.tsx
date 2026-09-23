@@ -60,10 +60,6 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.35 }}
             className="mt-5 max-w-xl text-[15px] leading-relaxed text-ink-soft"
           >
-            Robinhood Chain turned three months old and already buried one
-            launchpad that lasted ten days. Nobody saw it coming because nobody
-            was looking at the right numbers.
-            <br />
             <br />
             Assay looks at the right numbers. Every score is built from what the
             chain itself will admit to — never from what a launchpad says about
