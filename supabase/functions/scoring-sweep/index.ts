@@ -11,7 +11,12 @@
 // section once available; the invariant that must survive that swap
 // is everything after "-- composite + gating" below.
 
-import { supabaseAdmin, requireCronSecret } from "../_shared/supabaseAdmin.ts";
+import { supabaseAdmin, requireCronSecret } from '../_shared/supabaseAdmin.ts';
+import {
+  initSentry,
+  captureException,
+  flushSentry,
+} from '../_shared/sentry.ts';
 import {
   WEIGHT_QUALITY,
   WEIGHT_MECHANISM,
@@ -23,7 +28,9 @@ import {
   ALGORITHM_VERSION,
   SCORE_DISCLAIMER,
   starsFromScore,
-} from "../_shared/constants.ts";
+} from '../_shared/constants.ts';
+
+initSentry('scoring-sweep');
 
 interface LaunchRow {
   is_graduated: boolean;
@@ -41,19 +48,29 @@ Deno.serve(async (req) => {
   const supabase = supabaseAdmin();
 
   const { data: launchpads, error: lpErr } = await supabase
-    .from("launchpads")
-    .select("id, sample_size");
+    .from('launchpads')
+    .select('id, sample_size');
 
-  if (lpErr) return jsonError(lpErr.message, 500);
+  if (lpErr) {
+    captureException(lpErr);
+    await flushSentry();
+    return jsonError(lpErr.message, 500);
+  }
 
   const today = new Date().toISOString().slice(0, 10);
-  const results: { launchpad_id: string; final_score: number; stars: number }[] = [];
+  const results: {
+    launchpad_id: string;
+    final_score: number;
+    stars: number;
+  }[] = [];
 
   for (const lp of launchpads ?? []) {
     const { data: launches, error: lErr } = await supabase
-      .from("launches")
-      .select("is_graduated, is_confirmed_rugpull, peak_multiple, liquidity_usd, volume_24h_usd, wash_trading_flag")
-      .eq("launchpad_id", lp.id);
+      .from('launches')
+      .select(
+        'is_graduated, is_confirmed_rugpull, peak_multiple, liquidity_usd, volume_24h_usd, wash_trading_flag',
+      )
+      .eq('launchpad_id', lp.id);
 
     if (lErr || !launches || launches.length === 0) continue;
 
@@ -69,12 +86,17 @@ Deno.serve(async (req) => {
       dims.value * WEIGHT_VALUE +
       dims.consistency * WEIGHT_CONSISTENCY;
 
-    const finalScore = Math.max(0, Math.min(100, Math.round(rawScore * 10) / 10));
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(rawScore * 10) / 10),
+    );
     const isProvisional = sampleSize < MIN_SAMPLE_SIZE_FOR_CONFIDENCE;
     const rawStars = starsFromScore(finalScore);
-    const stars = isProvisional ? Math.min(rawStars, PROVISIONAL_STAR_CAP) : rawStars;
+    const stars = isProvisional
+      ? Math.min(rawStars, PROVISIONAL_STAR_CAP)
+      : rawStars;
 
-    const { error: upsertErr } = await supabase.from("launchpad_scores").upsert(
+    const { error: upsertErr } = await supabase.from('launchpad_scores').upsert(
       {
         launchpad_id: lp.id,
         score_date: today,
@@ -90,21 +112,30 @@ Deno.serve(async (req) => {
         consistency: dims.consistency,
         disclaimer: SCORE_DISCLAIMER,
       },
-      { onConflict: "launchpad_id,score_date" }
+      { onConflict: 'launchpad_id,score_date' },
     );
 
     if (upsertErr) {
-      console.error(`score upsert failed for launchpad ${lp.id}:`, upsertErr.message);
+      captureException(upsertErr, { launchpad_id: lp.id });
       continue;
     }
 
-    await supabase.from("launchpads").update({ sample_size: sampleSize }).eq("id", lp.id);
+    await supabase
+      .from('launchpads')
+      .update({ sample_size: sampleSize })
+      .eq('id', lp.id);
     results.push({ launchpad_id: lp.id, final_score: finalScore, stars });
   }
 
+  await flushSentry();
+
   return new Response(
-    JSON.stringify({ scored: results.length, algorithm_version: ALGORITHM_VERSION, results }),
-    { headers: { "Content-Type": "application/json" } }
+    JSON.stringify({
+      scored: results.length,
+      algorithm_version: ALGORITHM_VERSION,
+      results,
+    }),
+    { headers: { 'Content-Type': 'application/json' } },
   );
 });
 
@@ -118,7 +149,8 @@ function computeDimensions(launches: LaunchRow[]) {
   // launches can't swing the score to the extremes.
   const priorWeight = Math.max(0, 20 - n);
   const quality = clamp(
-    ((gradRate * 100 - rugRate * 150) * n + 50 * priorWeight) / (n + priorWeight)
+    ((gradRate * 100 - rugRate * 150) * n + 50 * priorWeight) /
+      (n + priorWeight),
   );
 
   // Mechanism: penalize wash-trading flags as a stand-in until
@@ -130,7 +162,8 @@ function computeDimensions(launches: LaunchRow[]) {
   // Market health: liquidity/volume depth, log-scaled so one huge
   // outlier launch can't dominate the average.
   const avgLiquidity =
-    launches.reduce((s, l) => s + Math.log10(1 + (l.liquidity_usd ?? 0)), 0) / n;
+    launches.reduce((s, l) => s + Math.log10(1 + (l.liquidity_usd ?? 0)), 0) /
+    n;
   const marketHealth = clamp((avgLiquidity / 6) * 100); // log10(1e6) = 6 -> ~100
 
   // Value: capped median peak-vs-launch multiple.
@@ -145,7 +178,9 @@ function computeDimensions(launches: LaunchRow[]) {
 
   // Consistency: inverse of variance across peak multiples — a tight
   // spread scores higher than a few huge wins next to many rugs.
-  const mean = multiples.length ? multiples.reduce((a, b) => a + b, 0) / multiples.length : 0;
+  const mean = multiples.length
+    ? multiples.reduce((a, b) => a + b, 0) / multiples.length
+    : 0;
   const variance = multiples.length
     ? multiples.reduce((s, m) => s + (m - mean) ** 2, 0) / multiples.length
     : 0;
@@ -161,6 +196,6 @@ function clamp(n: number): number {
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: { message } }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
   });
 }

@@ -9,20 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "16.3.5",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.116.0",
     "framer-motion": "13.4.0",
     "geist": "1.7.2",
-    "@supabase/supabase-js": "2.116.0",
-    "@supabase/ssr": "0.12.7"
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "typescript": "5.9.2",
+    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "22.10.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "supabase": "^2.117.0",
     "tailwindcss": "4.3.3",
-    "@tailwindcss/postcss": "4.3.3"
+    "typescript": "5.9.2"
   }
 }

@@ -6,11 +6,19 @@
 // See backfill-sampling-policy.md's header note: this is a DIFFERENT
 // job from the one-time onboarding backfill — do not merge the two.
 
-import { supabaseAdmin, requireCronSecret } from "../_shared/supabaseAdmin.ts";
-import { dexscreenerAdapter, blockscoutAdapter } from "../_shared/adapters.ts";
+import { supabaseAdmin, requireCronSecret } from '../_shared/supabaseAdmin.ts';
+import { dexscreenerAdapter, blockscoutAdapter } from '../_shared/adapters.ts';
+import {
+  initSentry,
+  captureException,
+  flushSentry,
+} from '../_shared/sentry.ts';
 
-const DEXSCREENER_BASE_URL = Deno.env.get("DEXSCREENER_API_BASE_URL") ?? "https://api.dexscreener.com";
-const BLOCKSCOUT_BASE_URL = Deno.env.get("BLOCKSCOUT_API_BASE_URL") ?? "";
+initSentry('ingestion-rotation');
+
+const DEXSCREENER_BASE_URL =
+  Deno.env.get('DEXSCREENER_API_BASE_URL') ?? 'https://api.dexscreener.com';
+const BLOCKSCOUT_BASE_URL = Deno.env.get('BLOCKSCOUT_API_BASE_URL') ?? '';
 const ROTATION_BUCKETS = 5; // 20% per hour => full cycle every 5 hours
 const FAST_PATH_HOURS = 24;
 
@@ -24,25 +32,35 @@ Deno.serve(async (req) => {
 
   // Fast path: every launch under 24h old, every run.
   const { data: freshLaunches, error: freshErr } = await supabase
-    .from("launches")
-    .select("id, token_address, launchpad_id")
-    .gte("launch_date", new Date(Date.now() - FAST_PATH_HOURS * 3_600_000).toISOString());
+    .from('launches')
+    .select('id, token_address, launchpad_id')
+    .gte(
+      'launch_date',
+      new Date(Date.now() - FAST_PATH_HOURS * 3_600_000).toISOString(),
+    );
 
   if (freshErr) {
+    captureException(freshErr);
+    await flushSentry();
     return jsonError(freshErr.message, 500);
   }
 
   // Rotating batch: everything else, sliced by a stable hash of the
   // launch id so the same launches land in the same bucket each cycle.
   const { data: allLaunches, error: allErr } = await supabase
-    .from("launches")
-    .select("id, token_address, launchpad_id");
+    .from('launches')
+    .select('id, token_address, launchpad_id');
 
-  if (allErr) return jsonError(allErr.message, 500);
+  if (allErr) {
+    captureException(allErr);
+    await flushSentry();
+    return jsonError(allErr.message, 500);
+  }
 
   const freshIds = new Set((freshLaunches ?? []).map((l) => l.id));
   const rotatingBatch = (allLaunches ?? []).filter(
-    (l) => !freshIds.has(l.id) && hashToBucket(l.id, ROTATION_BUCKETS) === bucket
+    (l) =>
+      !freshIds.has(l.id) && hashToBucket(l.id, ROTATION_BUCKETS) === bucket,
   );
 
   const toProcess = [...(freshLaunches ?? []), ...rotatingBatch];
@@ -52,23 +70,26 @@ Deno.serve(async (req) => {
 
   for (const launch of toProcess) {
     try {
-      const metrics = await dexscreenerAdapter(launch.token_address, DEXSCREENER_BASE_URL);
+      const metrics = await dexscreenerAdapter(
+        launch.token_address,
+        DEXSCREENER_BASE_URL,
+      );
 
-      await supabase.from("launch_metrics_snapshot").insert({
+      await supabase.from('launch_metrics_snapshot').insert({
         launch_id: launch.id,
         price_usd: metrics.priceUsd,
         liquidity_usd: metrics.liquidityUsd,
         volume_24h_usd: metrics.volume24hUsd,
-        data_source: "dexscreener",
+        data_source: 'dexscreener',
       });
 
       await supabase
-        .from("launches")
+        .from('launches')
         .update({
           liquidity_usd: metrics.liquidityUsd,
           volume_24h_usd: metrics.volume24hUsd,
         })
-        .eq("id", launch.id);
+        .eq('id', launch.id);
 
       if (BLOCKSCOUT_BASE_URL) {
         // Verification check — informational only in this reference
@@ -80,17 +101,22 @@ Deno.serve(async (req) => {
       touchedLaunchpads.add(launch.launchpad_id);
       processed += 1;
     } catch (e) {
-      console.error(`ingestion failed for launch ${launch.id}:`, e);
+      captureException(e, {
+        launch_id: launch.id,
+        launchpad_id: launch.launchpad_id,
+      });
       failed += 1;
     }
   }
 
   if (touchedLaunchpads.size > 0) {
     await supabase
-      .from("launchpads")
+      .from('launchpads')
       .update({ last_snapshot_at: new Date().toISOString() })
-      .in("id", Array.from(touchedLaunchpads));
+      .in('id', Array.from(touchedLaunchpads));
   }
+
+  await flushSentry();
 
   return new Response(
     JSON.stringify({
@@ -100,7 +126,7 @@ Deno.serve(async (req) => {
       processed,
       failed,
     }),
-    { headers: { "Content-Type": "application/json" } }
+    { headers: { 'Content-Type': 'application/json' } },
   );
 });
 
@@ -113,6 +139,6 @@ function hashToBucket(id: string, buckets: number): number {
 function jsonError(message: string, status: number) {
   return new Response(JSON.stringify({ error: { message } }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
   });
 }

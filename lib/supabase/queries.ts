@@ -1,6 +1,17 @@
-import { createServerSupabaseClient, isSupabaseConfigured } from "./server";
-import { getLaunchpads as getMockLaunchpads, getLaunchpadBySlug as getMockLaunchpadBySlug } from "@/lib/data";
-import { Launchpad, LaunchpadScore, Launch, LaunchpadBadge, ScoreHistoryPoint, DimensionScores } from "@/lib/types";
+import { createServerSupabaseClient, isSupabaseConfigured } from './server';
+import {
+  getLaunchpads as getMockLaunchpads,
+  getLaunchpadBySlug as getMockLaunchpadBySlug,
+  getLaunchBySlugAndAddress as getMockLaunchBySlugAndAddress,
+} from '@/lib/data';
+import {
+  Launchpad,
+  LaunchpadScore,
+  Launch,
+  LaunchpadBadge,
+  ScoreHistoryPoint,
+  DimensionScores,
+} from '@/lib/types';
 
 // ---------------------------------------------------------------
 // Row shapes, snake_case as they come back from Postgres/PostgREST.
@@ -13,7 +24,7 @@ interface LaunchpadRow {
   chain: string;
   deployer_addresses: string[];
   website_url: string | null;
-  discovery_source: Launchpad["discoverySource"];
+  discovery_source: Launchpad['discoverySource'];
   discovery_source_url: string | null;
   total_launches_upstream: number | null;
   sample_size: number;
@@ -60,15 +71,21 @@ function mapScore(launchpadId: string, row: ScoreRow | null): LaunchpadScore {
   if (!row) {
     return {
       launchpadId,
-      chain: "Robinhood Chain",
+      chain: 'Robinhood Chain',
       scoreDate: new Date().toISOString().slice(0, 10),
-      algorithmVersion: "—",
+      algorithmVersion: '—',
       finalScore: 0,
       stars: 0,
       isProvisional: true,
       sampleSize: 0,
-      dimensions: { quality: 0, mechanism: 0, marketHealth: 0, value: 0, consistency: 0 },
-      disclaimer: "",
+      dimensions: {
+        quality: 0,
+        mechanism: 0,
+        marketHealth: 0,
+        value: 0,
+        consistency: 0,
+      },
+      disclaimer: '',
     };
   }
   const dimensions: DimensionScores = {
@@ -80,7 +97,7 @@ function mapScore(launchpadId: string, row: ScoreRow | null): LaunchpadScore {
   };
   return {
     launchpadId,
-    chain: "Robinhood Chain",
+    chain: 'Robinhood Chain',
     scoreDate: row.score_date,
     algorithmVersion: row.algorithm_version,
     finalScore: row.final_score,
@@ -108,7 +125,12 @@ function mapLaunch(row: LaunchRow): Launch {
 }
 
 function mapBadge(row: BadgeRow): LaunchpadBadge {
-  return { id: row.id, name: row.name, description: row.description, awardedAt: row.awarded_at };
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    awardedAt: row.awarded_at,
+  };
 }
 
 function mapLaunchpad(
@@ -116,14 +138,14 @@ function mapLaunchpad(
   score: LaunchpadScore,
   launches: Launch[],
   badges: LaunchpadBadge[],
-  scoreHistory: ScoreHistoryPoint[]
+  scoreHistory: ScoreHistoryPoint[],
 ): Launchpad {
   return {
     id: row.id,
     slug: row.slug,
     name: row.name,
     description: row.description,
-    chain: "Robinhood Chain",
+    chain: 'Robinhood Chain',
     deployerAddresses: row.deployer_addresses,
     websiteUrl: row.website_url ?? undefined,
     discoverySource: row.discovery_source,
@@ -152,26 +174,37 @@ export async function getLaunchpads(): Promise<Launchpad[]> {
 
   const supabase = await createServerSupabaseClient();
   const { data: launchpads, error } = await supabase
-    .from("launchpads")
-    .select("*")
-    .order("name");
+    .from('launchpads')
+    .select('*')
+    .order('name');
 
   if (error || !launchpads) {
-    console.error("getLaunchpads() failed, falling back to mock data:", error?.message);
+    console.error(
+      'getLaunchpads() failed, falling back to mock data:',
+      error?.message,
+    );
     return getMockLaunchpads();
   }
 
   const results: Launchpad[] = [];
   for (const row of launchpads as LaunchpadRow[]) {
     const { data: scoreRow } = await supabase
-      .from("launchpad_scores")
-      .select("*")
-      .eq("launchpad_id", row.id)
-      .order("score_date", { ascending: false })
+      .from('launchpad_scores')
+      .select('*')
+      .eq('launchpad_id', row.id)
+      .order('score_date', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    results.push(mapLaunchpad(row, mapScore(row.id, scoreRow as ScoreRow | null), [], [], []));
+    results.push(
+      mapLaunchpad(
+        row,
+        mapScore(row.id, scoreRow as ScoreRow | null),
+        [],
+        [],
+        [],
+      ),
+    );
   }
 
   return results.sort((a, b) => b.score.finalScore - a.score.finalScore);
@@ -179,43 +212,52 @@ export async function getLaunchpads(): Promise<Launchpad[]> {
 
 /** Detail view: full launchpad, including launches, badges, and
  * 30-day score history — used by app/launchpad/[slug]/page.tsx. */
-export async function getLaunchpadBySlug(slug: string): Promise<Launchpad | undefined> {
+export async function getLaunchpadBySlug(
+  slug: string,
+): Promise<Launchpad | undefined> {
   if (!isSupabaseConfigured()) return getMockLaunchpadBySlug(slug);
 
   const supabase = await createServerSupabaseClient();
   const { data: row, error } = await supabase
-    .from("launchpads")
-    .select("*")
-    .eq("slug", slug)
+    .from('launchpads')
+    .select('*')
+    .eq('slug', slug)
     .maybeSingle();
 
   if (error || !row) {
-    console.error(`getLaunchpadBySlug(${slug}) failed, falling back to mock data:`, error?.message);
+    console.error(
+      `getLaunchpadBySlug(${slug}) failed, falling back to mock data:`,
+      error?.message,
+    );
     return getMockLaunchpadBySlug(slug);
   }
 
-  const [{ data: scoreRow }, { data: historyRows }, { data: launchRows }, { data: badgeRows }] =
-    await Promise.all([
-      supabase
-        .from("launchpad_scores")
-        .select("*")
-        .eq("launchpad_id", row.id)
-        .order("score_date", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("launchpad_scores")
-        .select("score_date, final_score")
-        .eq("launchpad_id", row.id)
-        .order("score_date", { ascending: true })
-        .limit(90),
-      supabase
-        .from("launches")
-        .select("*")
-        .eq("launchpad_id", row.id)
-        .order("launch_date", { ascending: false }),
-      supabase.from("launchpad_badges").select("*").eq("launchpad_id", row.id),
-    ]);
+  const [
+    { data: scoreRow },
+    { data: historyRows },
+    { data: launchRows },
+    { data: badgeRows },
+  ] = await Promise.all([
+    supabase
+      .from('launchpad_scores')
+      .select('*')
+      .eq('launchpad_id', row.id)
+      .order('score_date', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('launchpad_scores')
+      .select('score_date, final_score')
+      .eq('launchpad_id', row.id)
+      .order('score_date', { ascending: true })
+      .limit(90),
+    supabase
+      .from('launches')
+      .select('*')
+      .eq('launchpad_id', row.id)
+      .order('launch_date', { ascending: false }),
+    supabase.from('launchpad_badges').select('*').eq('launchpad_id', row.id),
+  ]);
 
   const scoreHistory: ScoreHistoryPoint[] = (historyRows ?? []).map((r) => ({
     date: r.score_date,
@@ -227,6 +269,21 @@ export async function getLaunchpadBySlug(slug: string): Promise<Launchpad | unde
     mapScore(row.id, scoreRow as ScoreRow | null),
     (launchRows ?? []).map(mapLaunch),
     (badgeRows ?? []).map(mapBadge),
-    scoreHistory
+    scoreHistory,
   );
+}
+
+/** Token detail view: one launch, by its launchpad slug + address —
+ * used by app/launchpad/[slug]/[tokenAddress]/page.tsx. Reuses
+ * getLaunchpadBySlug() rather than querying `launches` directly, so
+ * the mock-data fallback and error handling stay in one place. */
+export async function getLaunchBySlugAndAddress(
+  slug: string,
+  tokenAddress: string,
+): Promise<Launch | undefined> {
+  if (!isSupabaseConfigured())
+    return getMockLaunchBySlugAndAddress(slug, tokenAddress);
+
+  const lp = await getLaunchpadBySlug(slug);
+  return lp?.launches.find((l) => l.tokenAddress === tokenAddress);
 }

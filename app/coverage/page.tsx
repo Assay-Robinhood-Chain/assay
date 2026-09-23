@@ -1,28 +1,30 @@
-import type { Metadata } from "next";
-import Reveal from "@/components/Reveal";
-import PipelineFlow from "@/components/PipelineFlow";
-import CoverageTable from "@/components/CoverageTable";
-import LiveFeed from "@/components/LiveFeed";
-import CronStatus from "@/components/CronStatus";
-import StatsRow from "@/components/StatsRow";
-import { getLaunchpads } from "@/lib/data";
-import { buildCoverageRows, COLLECTORS } from "@/lib/coverage";
+import type { Metadata } from 'next';
+import Reveal from '@/components/Reveal';
+import PipelineFlow from '@/components/PipelineFlow';
+import CoverageTable from '@/components/CoverageTable';
+import LiveFeed from '@/components/LiveFeed';
+import CronStatus from '@/components/CronStatus';
+import StatsRow from '@/components/StatsRow';
+import { getLaunchpads } from '@/lib/supabase/queries';
+import { buildCoverageRows, COLLECTORS } from '@/lib/coverage';
 import {
   MIN_BACKFILL_FULL_THRESHOLD,
   MAX_BACKFILL_SAMPLE,
-} from "@/lib/constants";
+} from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: "Coverage — Assay",
+  title: 'Coverage — Assay',
   description:
-    "Exactly which Robinhood Chain launchpads are indexed, where their token data comes from, and how fresh it is — including a live feed of the ingestion pipeline.",
+    'Exactly which Robinhood Chain launchpads are indexed, where their token data comes from, and how fresh it is — including a live feed of the ingestion pipeline.',
 };
 
-export default function CoveragePage() {
-  const launchpads = getLaunchpads();
+export default async function CoveragePage() {
+  const launchpads = await getLaunchpads();
   const rows = buildCoverageRows(launchpads);
   const totalTracked = launchpads.reduce((sum, lp) => sum + lp.sampleSize, 0);
-  const onlineCollectors = COLLECTORS.filter((c) => c.status === "online").length;
+  const onlineCollectors = COLLECTORS.filter(
+    (c) => c.status === 'online',
+  ).length;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
@@ -34,9 +36,10 @@ export default function CoveragePage() {
           What&rsquo;s indexed, right now
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
-          A visible gap is credible; a guess presented as coverage is not. This is the exact
-          pipeline every launchpad below moves through — from onboarding, to the one-time
-          backfill, to the ongoing cronjob that keeps every score current.
+          A visible gap is credible; a guess presented as coverage is not. This
+          is the exact pipeline every launchpad below moves through — from
+          onboarding, to the one-time backfill, to the ongoing cronjob that
+          keeps every score current.
         </p>
       </Reveal>
 
@@ -47,14 +50,26 @@ export default function CoveragePage() {
             From onboarding to a live score
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
-            <FlowStep n="1" title="Launchpad added" desc="Name, slug, deployer address recorded. Docs checked for a Bitquery/Mobula entry." />
+            <FlowStep
+              n="1"
+              title="Launchpad added"
+              desc="Name, slug, deployer address recorded. Docs checked for a Bitquery/Mobula entry."
+            />
             <FlowStep
               n="2"
               title="Tokens discovered"
               desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else 50% capped at ${MAX_BACKFILL_SAMPLE} — most-recent-first.`}
             />
-            <FlowStep n="3" title="Scored" desc="5 weighted dimensions, clamped 0–100, gated by sample size before a star rating is shown." />
-            <FlowStep n="4" title="Kept current" desc="Hourly ingestion rotation + a daily scoring sweep — no manual step re-runs this." />
+            <FlowStep
+              n="3"
+              title="Scored"
+              desc="5 weighted dimensions, clamped 0–100, gated by sample size before a star rating is shown."
+            />
+            <FlowStep
+              n="4"
+              title="Kept current"
+              desc="Hourly ingestion rotation + a daily scoring sweep — no manual step re-runs this."
+            />
           </div>
         </section>
       </Reveal>
@@ -63,10 +78,20 @@ export default function CoveragePage() {
       <Reveal delay={0.08} className="mt-8">
         <StatsRow
           items={[
-            { label: "Collectors online", value: `${onlineCollectors} / ${COLLECTORS.length}`, tone: "up" },
-            { label: "Launchpads tracked", value: launchpads.length.toString() },
-            { label: "Launches in sample", value: totalTracked.toLocaleString() },
-            { label: "Ingestion cadence", value: "Hourly" },
+            {
+              label: 'Collectors online',
+              value: `${onlineCollectors} / ${COLLECTORS.length}`,
+              tone: 'up',
+            },
+            {
+              label: 'Launchpads tracked',
+              value: launchpads.length.toString(),
+            },
+            {
+              label: 'Launches in sample',
+              value: totalTracked.toLocaleString(),
+            },
+            { label: 'Ingestion cadence', value: 'Hourly' },
           ]}
         />
       </Reveal>
@@ -94,7 +119,10 @@ export default function CoveragePage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {COLLECTORS.map((c) => (
-            <div key={c.name} className="rounded-xl border border-line bg-card p-4">
+            <div
+              key={c.name}
+              className="rounded-xl border border-line bg-card p-4"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-ink">{c.name}</span>
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-up">
@@ -102,7 +130,9 @@ export default function CoveragePage() {
                   online
                 </span>
               </div>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{c.provides}</p>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                {c.provides}
+              </p>
               <span className="mt-2 inline-block rounded-full border border-line-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-faint">
                 {c.role}
               </span>
@@ -118,17 +148,22 @@ export default function CoveragePage() {
         </h2>
         <CoverageTable rows={rows} />
         <p className="mt-3 text-[12px] leading-relaxed text-faint">
-          Confidence floor here is a coarse, display-only read on sample size — not the scoring
-          engine's binary confidence gate (see Methodology). A launchpad can be &ldquo;high&rdquo;
-          coverage and still carry a low score.
+          Confidence floor here is a coarse, display-only read on sample size —
+          not the scoring engine's binary confidence gate (see Methodology). A
+          launchpad can be &ldquo;high&rdquo; coverage and still carry a low
+          score.
         </p>
       </Reveal>
 
       {/* Live feed */}
       <Reveal delay={0.05} className="mt-10">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">Live feed</h2>
-          <span className="font-mono text-[11px] text-faint">simulated — for illustration</span>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">
+            Live feed
+          </h2>
+          <span className="font-mono text-[11px] text-faint">
+            simulated — for illustration
+          </span>
         </div>
         <LiveFeed launchpads={launchpads} />
       </Reveal>
@@ -136,7 +171,15 @@ export default function CoveragePage() {
   );
 }
 
-function FlowStep({ n, title, desc }: { n: string; title: string; desc: string }) {
+function FlowStep({
+  n,
+  title,
+  desc,
+}: {
+  n: string;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="rounded-xl border border-line-soft bg-panel p-4">
       <span className="font-mono text-[11px] text-cobalt">{n}</span>
