@@ -19,6 +19,29 @@
   --down: #b42318;
   --down-soft: rgba(180, 35, 24, 0.1);
   color-scheme: light;
+
+  /* Fixed dark surface — same hex as the light-theme --ink value used on
+   * the homepage "See the Measurements" button (bg-ink). Used for cards
+   * and bars that should always read dark, regardless of site theme,
+   * echoing the reference card design. */
+  --surface-dark: #141413;
+  --surface-dark-soft: #201f1c;
+
+  /* Fixed "night" text/border tones for content sitting on --surface-dark,
+   * so it stays legible no matter which theme the rest of the site is in. */
+  --night-ink: #f3f1ea;
+  --night-soft: #b5b2a6;
+  --night-faint: #6e6c63;
+  --night-border: #302f2a;
+  --night-up: #4ade9a;
+  --night-gold: #e0b04d;
+  --night-down: #ff7a6e;
+  --night-cobalt: #7a9cff;
+
+  /* Accent chip color from the reference card design. */
+  --lime: #d7f900;
+  --lime-soft: rgba(215, 249, 0, 0.14);
+  --lime-ink: #141413;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,6 +109,20 @@
   --color-up-soft: var(--up-soft);
   --color-down: var(--down);
   --color-down-soft: var(--down-soft);
+
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-soft: var(--surface-dark-soft);
+  --color-night-ink: var(--night-ink);
+  --color-night-soft: var(--night-soft);
+  --color-night-faint: var(--night-faint);
+  --color-night-border: var(--night-border);
+  --color-night-up: var(--night-up);
+  --color-night-gold: var(--night-gold);
+  --color-night-down: var(--night-down);
+  --color-night-cobalt: var(--night-cobalt);
+  --color-lime: var(--lime);
+  --color-lime-soft: var(--lime-soft);
+  --color-lime-ink: var(--lime-ink);
 }
 
 * {
@@ -175,6 +212,137 @@ body {
   background: var(--cobalt-soft);
   color: var(--cobalt);
   transform: scale(1.06);
+}
+
+/* Rankings stat cards: thin border that matches --ink (black in light
+ * theme) at rest; in dark theme the card would otherwise blend into the
+ * equally-dark page, so the border goes white and thicker to separate it.
+ * Plain, unlayered CSS — same pattern as .card-hover above — so it wins
+ * over Tailwind's layered "border" utility regardless of class order. */
+.rank-stat-card {
+  border-width: 1.5px;
+  border-color: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rank-stat-card {
+    border-width: 1.5px;
+    border-color: #ffffff;
+  }
+}
+
+:root[data-theme="dark"] .rank-stat-card {
+  border-width: 1.5px;
+  border-color: #ffffff;
+}
+
+/* Reusable "card surface" — any block of UI that should always sit on
+ * the SAME fixed dark surface as the stat cards (--surface-dark,
+ * #141413), regardless of site theme. Used on the rankings table +
+ * filter buttons, and on Get Listed's step cards / form / payload
+ * preview. Text/line colors use the existing --night-* tokens made for
+ * content on --surface-dark, so they stay legible on that fixed-dark
+ * fill in both themes. Unconditional (not scoped to a dark-mode media
+ * query), same as the stat cards, so light and dark site themes render
+ * it identically. Scoping the theme variables themselves — rather than
+ * individual classes — means every background, text, and accent color
+ * already built from them (bg-card, bg-paper, text-ink, text-up/gold/
+ * down, etc.) updates together with no component markup changes. */
+.card-surface {
+  --card: var(--surface-dark);
+  --panel: var(--surface-dark-soft);
+  --paper: var(--surface-dark-soft);
+  --line: var(--night-border);
+  --line-soft: var(--night-border);
+  --ink: var(--night-ink);
+  --ink-soft: var(--night-soft);
+  --muted: var(--night-soft);
+  --faint: var(--night-faint);
+  --cobalt: var(--night-cobalt);
+  --cobalt-soft: rgba(122, 156, 255, 0.14);
+  --gold: var(--night-gold);
+  --gold-soft: rgba(224, 176, 77, 0.14);
+  --up: var(--night-up);
+  --up-soft: rgba(74, 222, 154, 0.12);
+  --down: var(--night-down);
+  --down-soft: rgba(255, 122, 110, 0.14);
+}
+
+/* Card boundaries (outer wrappers, buttons, avatars, badges, inputs)
+ * get the exact same reactive border as .rank-stat-card — thin/black
+ * at rest, white and separating in dark theme — rather than a fixed
+ * color, since --ink above is now fixed light and can't double as the
+ * theme-reactive border color the way it does on a normal card. Inner
+ * row dividers keep the soft night-border tint as-is; a bold line
+ * between every row would be clutter, not a card edge. */
+.card-surface [class~="border-line"] {
+  border-width: 1.5px;
+  border-color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card-surface [class~="border-line"] {
+    border-color: #ffffff;
+  }
+}
+
+:root[data-theme="dark"] .card-surface [class~="border-line"] {
+  border-color: #ffffff;
+}
+
+/* Smooth color transition for every fixed/reactive surface above. None
+ * of these elements carry their own transition (unlike the stat cards,
+ * which already animate via Tailwind's transition-all for their hover
+ * state), so background-color, border-color and text color would
+ * otherwise snap instantly whenever the site theme toggles. */
+.card-surface,
+.card-surface *,
+.ticker-surface,
+.ticker-surface *,
+.layout-surface,
+.layout-surface * {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Ticker bar: same theme-reactive border as the stat cards and table —
+ * thin/black at rest, white in dark theme — instead of the fixed
+ * --night-border tint, which never changes and so had nothing visible
+ * to transition when the theme toggles. */
+.ticker-surface {
+  border-width: 1.5px;
+  border-color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ticker-surface {
+    border-color: #ffffff;
+  }
+}
+
+:root[data-theme="dark"] .ticker-surface {
+  border-color: #ffffff;
+}
+
+/* Navbar / footer: same bold theme-reactive border, at the same 1.5px
+ * weight, as the ticker bar and stat cards — instead of the subtle
+ * --line tint at the default 1px (barely visible, especially in dark
+ * theme against a dark page). */
+.layout-surface {
+  border-width: 1.5px;
+  border-color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .layout-surface {
+    border-color: #ffffff;
+  }
+}
+
+:root[data-theme="dark"] .layout-surface {
+  border-color: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {

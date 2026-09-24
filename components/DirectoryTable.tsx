@@ -101,7 +101,7 @@ export default function DirectoryTable({
             className={`rounded-full border px-3 py-1.5 font-mono text-[12.5px] transition-colors ${
               minStars === s
                 ? 'border-cobalt bg-cobalt-soft text-cobalt'
-                : 'border-line text-muted hover:border-faint'
+                : 'border-line bg-card text-muted hover:border-faint'
             }`}
           >
             {s === 0 ? 'All' : `${'★'.repeat(s)}+`}
@@ -112,7 +112,7 @@ export default function DirectoryTable({
           onClick={() => setIncludeProvisional((v) => !v)}
           className={`rounded-full border px-3 py-1.5 text-[12.5px] transition-colors ${
             includeProvisional
-              ? 'border-line text-muted hover:border-faint'
+              ? 'border-line bg-card text-muted hover:border-faint'
               : 'border-cobalt bg-cobalt-soft text-cobalt'
           }`}
         >
@@ -120,7 +120,7 @@ export default function DirectoryTable({
             ? 'Including provisional'
             : 'Excluding provisional'}
         </button>
-        <span className="ml-auto rounded-full border border-line px-3 py-1.5 font-mono text-[12.5px] text-faint">
+        <span className="ml-auto rounded-full border border-line bg-card px-3 py-1.5 font-mono text-[12.5px] text-faint">
           chain: {TARGET_CHAIN}
         </span>
       </div>
@@ -139,7 +139,7 @@ export default function DirectoryTable({
           >
             {/* Desktop table — becomes cards below MOBILE_BREAKPOINT_PX */}
             <div
-              className="hidden overflow-hidden rounded-xl border border-line md:block"
+              className="hidden overflow-hidden rounded-xl border border-line bg-card md:block"
               style={{ ['--bp' as string]: `${MOBILE_BREAKPOINT_PX}px` }}
             >
               <div className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] gap-4 border-b border-line bg-panel px-5 py-2.5">

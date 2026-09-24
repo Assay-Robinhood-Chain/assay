@@ -2,9 +2,9 @@ import { getLaunchpads } from '@/lib/supabase/queries';
 import { rampColor } from '@/lib/scoring';
 
 const RAMP_CLASSES: Record<string, string> = {
-  green: 'text-up',
-  amber: 'text-gold',
-  red: 'text-down',
+  green: 'text-night-up',
+  amber: 'text-night-gold',
+  red: 'text-night-down',
 };
 
 const TAGLINES = [
@@ -28,10 +28,10 @@ function ScoreItem({
   const color = rampColor(score);
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className="text-faint">✦</span>
-      <span className="text-ink-soft">{name}</span>
+      <span className="text-night-faint">✦</span>
+      <span className="text-night-soft">{name}</span>
       <span className={RAMP_CLASSES[color]}>{score.toFixed(1)}</span>
-      <span className="text-faint">
+      <span className="text-night-faint">
         {'★'.repeat(stars)}
         {'☆'.repeat(3 - stars)}
       </span>
@@ -54,7 +54,7 @@ export default async function TickerBar() {
     if (TAGLINES[i]) {
       items.push(
         <span key={`t-${i}`} className="inline-flex items-center gap-1.5">
-          <span className="text-gold">✦</span>
+          <span className="text-lime">✦</span>
           {TAGLINES[i]}
         </span>,
       );
@@ -75,7 +75,7 @@ export default async function TickerBar() {
   return (
     <div
       aria-hidden="true"
-      className="overflow-hidden whitespace-nowrap border-b border-line bg-panel py-1.5 font-mono text-[11.5px] tracking-wide text-muted"
+      className="ticker-surface overflow-hidden whitespace-nowrap border-b border-night-border bg-surface-dark py-1.5 font-mono text-[11.5px] tracking-wide text-night-soft"
     >
       <div className="ticker-track inline-flex w-max gap-8">
         <span className="inline-flex shrink-0 gap-8">{items}</span>

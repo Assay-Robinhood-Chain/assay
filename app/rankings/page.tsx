@@ -83,7 +83,7 @@ export default async function RankingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div className="rank-page mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
         <p className="mb-3 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
           <PageIcon kind="list" size={13} />
@@ -99,14 +99,19 @@ export default async function RankingsPage() {
         </p>
       </Reveal>
 
-      {/* Stat strip — staggered entrance, level grid (aligned with Get Listed's strip) */}
+      {/* Stat strip — staggered entrance, level grid (aligned with Get Listed's strip).
+       * Cards are a fixed dark fill (bg-[#141413], same hex as the homepage's
+       * "See the Measurements" button) regardless of site theme. The border
+       * is the only part that reacts to theme: thin/black at rest, and — via
+       * .rank-stat-card in globals.css — white and thicker in dark theme, so
+       * the card doesn't blend into an equally-dark page. */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s, i) => {
           const accent = ACCENT[s.tone];
           return (
             <Reveal key={s.label} delay={0.05 + i * 0.05}>
               <div
-                className={`group relative overflow-hidden rounded-xl border border-line bg-card p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                className={`rank-stat-card group relative overflow-hidden rounded-xl border bg-[#141413] p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
               >
                 <span
                   className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
@@ -116,10 +121,10 @@ export default async function RankingsPage() {
                 >
                   <PageIcon kind={s.icon} size={14} />
                 </div>
-                <div className="mt-3 font-mono text-xl font-semibold text-ink">
+                <div className="mt-3 font-mono text-xl font-bold text-[#f3f1ea]">
                   {s.value}
                 </div>
-                <div className="mt-0.5 text-[11.5px] uppercase tracking-wide text-faint">
+                <div className="mt-0.5 text-[12px] tracking-normal text-[#b5b2a6]">
                   {s.label}
                 </div>
               </div>
@@ -129,7 +134,9 @@ export default async function RankingsPage() {
       </div>
 
       <Reveal delay={0.25} className="mt-8">
-        <DirectoryTable launchpads={launchpads} />
+        <div className="card-surface">
+          <DirectoryTable launchpads={launchpads} />
+        </div>
       </Reveal>
 
       <p className="mt-8 max-w-2xl text-[12px] leading-relaxed text-faint">

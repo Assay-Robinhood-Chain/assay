@@ -321,7 +321,7 @@ export default function SubmitPage() {
       </Reveal>
 
       {/* Process strip — staggered entrance, level grid (aligned with Rankings' strip) */}
-      <div className="mt-7 grid gap-3 sm:grid-cols-3">
+      <div className="card-surface mt-7 grid gap-3 sm:grid-cols-3">
         {PROCESS_STEPS.map((s, i) => {
           const accent = ACCENT[ACCENT_ORDER[i % ACCENT_ORDER.length]];
           return (
@@ -354,7 +354,7 @@ export default function SubmitPage() {
         })}
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+      <div className="card-surface mt-8 grid gap-6 lg:grid-cols-2">
         {/* Left — the form */}
         <Reveal delay={0.06}>
           <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
@@ -636,7 +636,7 @@ export default function SubmitPage() {
 
       <p className="mt-6 text-[12.5px] text-muted">
         Initial status of every submission:{' '}
-        <span className="rounded border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">
+        <span className="card-surface rounded border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">
           PENDING
         </span>{' '}
         — kept private until verified by peer review.
