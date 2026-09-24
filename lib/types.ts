@@ -1,11 +1,13 @@
 export type DimensionKey =
-  | "quality"
-  | "mechanism"
-  | "marketHealth"
-  | "value"
-  | "consistency";
+  | 'quality'
+  | 'mechanism'
+  | 'marketHealth'
+  | 'value'
+  | 'consistency';
 
-export type DimensionScores = Record<DimensionKey, number>; // 0–100 each
+// 0–100 each; null = not enough data to measure this dimension yet (never
+// a stand-in 0 or 100).
+export type DimensionScores = Record<DimensionKey, number | null>;
 
 export interface LaunchpadBadge {
   id: string;
@@ -16,7 +18,7 @@ export interface LaunchpadBadge {
 
 export interface LaunchpadScore {
   launchpadId: string;
-  chain: typeof import("./constants").TARGET_CHAIN;
+  chain: typeof import('./constants').TARGET_CHAIN;
   scoreDate: string; // ISO 8601 date
   algorithmVersion: string; // e.g. "v1.3"
   finalScore: number; // 0–100, clamped
@@ -49,14 +51,14 @@ export interface ScoreHistoryPoint {
 // third-party-indexer-integration.md. This only changes how new token
 // launches are found, never how their market metrics are measured
 // (that's always Dexscreener + Blockscout, regardless of this field).
-export type DiscoverySource = "bitquery" | "mobula" | "rpc_self_indexed";
+export type DiscoverySource = 'bitquery' | 'mobula' | 'rpc_self_indexed';
 
 export interface Launchpad {
   id: string;
   slug: string;
   name: string;
   description: string;
-  chain: typeof import("./constants").TARGET_CHAIN;
+  chain: typeof import('./constants').TARGET_CHAIN;
   deployerAddresses: string[];
   websiteUrl?: string;
   discoverySource: DiscoverySource;

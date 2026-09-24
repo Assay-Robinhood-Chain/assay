@@ -16,10 +16,131 @@ export const WEIGHT_VALUE = 0.2;
 export const WEIGHT_CONSISTENCY = 0.1;
 
 export const MIN_BACKFILL_FULL_THRESHOLD = 100;
-export const MAX_BACKFILL_SAMPLE = 250;
-export const BACKFILL_SAMPLE_RATIO = 0.5;
+export const BACKFILL_SAMPLE_RATIO = 0.2;
+// Upper bound on the one-time backfill, so a very large launchpad (tens of
+// thousands of launches) cannot flood the upstream APIs. 20% of 5,000 is
+// exactly 1,000, so the rule is continuous: min(20%, 1000).
+export const BACKFILL_SAMPLE_CAP = 1000;
 
-export const ALGORITHM_VERSION = 'v1.3';
+// How much bigger a pool onboarding-backfill asks an adapter to gather
+// than the sample it actually wants — gives sampleWithMinimumAge (see
+// adapters.ts) real launches from across the timeline to pick from,
+// instead of only whatever the first page of results happens to contain.
+export const BACKFILL_POOL_MULTIPLIER = 3;
+
+// --- Upstream discovery + sample resample (post-onboarding) ---
+// onboarding-backfill only ever runs once per launchpad. These two crons
+// are what keep an onboarded launchpad's data from going stale forever:
+// upstream-discovery looks for launches created SINCE onboarding (or the
+// last discovery run); sample-resample periodically redraws which known
+// launches are the active sample, so newly-discovered launches actually
+// get a chance to be tracked instead of just piling up unused.
+//
+// Deliberately two different cadences: discovery is cheap (one recent-
+// activity scan) and safe to run often, so new launches show up in the
+// known population quickly. Resampling is what changes WHICH launches are
+// actively refreshed/scored, so it runs less often to avoid the active
+// sample (and therefore the score) churning day to day.
+export const DISCOVERY_INTERVAL_HOURS = 24; // upstream-discovery: daily
+export const RESAMPLE_INTERVAL_DAYS = 7; // sample-resample: weekly
+// How many recent logs upstream-discovery asks an adapter to scan per
+// launchpad per run, looking for launches not already in `launches`. Kept
+// small relative to BACKFILL_SAMPLE_CAP — this is a "did anything new show
+// up recently" check running daily, not a full re-backfill.
+export const DISCOVERY_SCAN_SIZE = 200;
+// Once a launchpad has a discovery cursor (launchpads.last_discovered_launch_at),
+// upstream-discovery no longer scans a fixed "200 newest logs" — it pages
+// only until it reaches logs older than the cursor. This is the safety cap
+// on how many launches that can gather in one run (a very busy day), and the
+// overlap re-scanned before the cursor so boundary launches are never missed
+// (duplicates are harmless: the upsert uses ignoreDuplicates).
+export const DISCOVERY_CURSOR_MAX_POOL = 1000;
+export const DISCOVERY_CURSOR_OVERLAP_MINUTES = 60;
+
+// backfill-enrichment (async token-detail queue) — see
+// 0007_backfill_enrichment.sql. Tuned to stay well inside an Edge
+// Function's execution window even for a large backlog: a few hundred
+// launches per run, fetched with bounded concurrency rather than
+// sequentially or all-at-once.
+export const ENRICHMENT_BATCH_SIZE = 300;
+export const ENRICHMENT_CONCURRENCY = 15;
+
+// onboarding-backfill (called synchronously from the approve action —
+// app/api/admin/moderation/route.ts) enriches this many of the
+// newest-just-inserted launches itself, right in the same request,
+// instead of leaving every single one for backfill-enrichment's next
+// 5-minute tick. Deliberately small: `sample` can be in the thousands,
+// and this has to stay well inside the Edge Function's execution
+// window. The rest of the sample still goes through the normal queue.
+export const ONBOARDING_SYNC_ENRICH_LIMIT = 20;
+
+// A launch counts as "graduated" once it has a DEX pool (per Dexscreener)
+// with at least this much liquidity. Graduation is a historical fact, so
+// once set it is never flipped back to false by a later liquidity drop.
+export const MIN_GRADUATED_LIQUIDITY_USD = 1000;
+
+// A dimension is only scored when at least this many launches carry the
+// data it needs. Below that it is reported as missing (null) rather than
+// as a number computed from a handful of tokens.
+export const MIN_DATA_POINTS_PER_DIMENSION = 5;
+
+// Mechanism is defined as contract verification + audit status + LP-lock,
+// but only verification is measured today. Scoring it as the verification
+// rate alone would hand a launchpad 100/100 for one easily-satisfied
+// component (tokens from one factory share bytecode, so Blockscout tends to
+// mark them all verified). The score is therefore capped at the share of
+// components actually measured. Raise MECHANISM_COMPONENTS_MEASURED when
+// audit / LP-lock data is wired in.
+export const MECHANISM_COMPONENTS_MEASURED = 1;
+export const MECHANISM_COMPONENTS_TOTAL = 3;
+
+// Tokens younger than this are not judged on outcomes: graduation and
+// peak-vs-launch need time to play out, so a launchpad whose sample is all
+// one or two days old would otherwise be scored on tokens that simply
+// haven't had a chance yet. Quality, Value and Consistency only count
+// tokens at least this old; Mechanism and Market Health describe the
+// current state and count every token.
+export const MIN_TOKEN_AGE_HOURS = 72;
+
+// A composite needs at least this many of the five dimensions measured.
+// With fewer (e.g. only Mechanism + Market Health), rescaling the weights
+// would present a couple of partial signals as if they were the whole
+// score, so no composite is produced at all ("Not yet scored").
+export const MIN_DIMENSIONS_FOR_SCORE = 3;
+
+// --- Refresh policy (keeps recurring API cost proportional to what changes) ---
+// Tokens under 24h old are refreshed by ingestion-rotation every run, but
+// each token only every FAST_PATH_REFRESH_HOURS hours (spread over hash
+// buckets, so the load is flat instead of one burst per hour).
+export const FAST_PATH_REFRESH_HOURS = 3;
+// Peak multiple (Mobula OHLCV) changes slowly and only feeds Value and
+// Consistency, so it is re-asked at most this often: daily while a token is
+// under PEAK_REFRESH_YOUNG_DAYS old (peaks move most early), weekly after.
+export const PEAK_REFRESH_YOUNG_HOURS = 24;
+export const PEAK_REFRESH_YOUNG_DAYS = 14;
+export const PEAK_REFRESH_OLD_HOURS = 168;
+// Mobula OHLCV is batched (POST, 10 tokens per request = 10 credits, vs
+// 5 credits per single-token GET).
+export const MOBULA_PEAK_BATCH_SIZE = 10;
+export const MOBULA_PEAK_CONCURRENCY = 4;
+
+// Mobula token/details is batched (POST): this many tokens per request,
+// this many requests in flight at once.
+export const MOBULA_DETAILS_BATCH_SIZE = 10;
+export const MOBULA_DETAILS_CONCURRENCY = 4;
+
+// v1.6: tokens under MIN_TOKEN_AGE_HOURS are excluded from Quality / Value /
+// Consistency; "Mobula had no price history" counts as a 1.0x peak instead
+// of being dropped; a composite needs MIN_DIMENSIONS_FOR_SCORE dimensions.
+// v1.5 (on top of v1.4's "no data => null, excluded from the composite"):
+//   - Value is gain-based on a log scale (a token that never rose above its
+//     launch price scores 0, not 10).
+//   - Consistency is stability in log space, multiplied by how good the
+//     typical outcome is (uniformly flat tokens are not "consistent").
+//   - Market Health averages over ALL checked launches; a token with no DEX
+//     pool counts as zero liquidity instead of being left out.
+//   - Mechanism is capped by the share of its components actually measured.
+export const ALGORITHM_VERSION = 'v1.6';
 
 // SSRF-safe fetch (see ssrfSafeFetch.ts) and submission rate limiting
 export const URL_FETCH_TIMEOUT_MS = 8000;
@@ -34,8 +155,8 @@ export const SCORE_DISCLAIMER =
 export function computeBackfillSample(totalLaunches: number): number {
   if (totalLaunches < MIN_BACKFILL_FULL_THRESHOLD) return totalLaunches;
   return Math.min(
-    MAX_BACKFILL_SAMPLE,
     Math.ceil(totalLaunches * BACKFILL_SAMPLE_RATIO),
+    BACKFILL_SAMPLE_CAP,
   );
 }
 
@@ -45,3 +166,16 @@ export function starsFromScore(score: number): 0 | 1 | 2 | 3 {
   if (score >= STAR_1_THRESHOLD) return 1;
   return 0;
 }
+
+// --- Auto-approve of new_launchpad submissions ---
+// auto-approve-submissions (cron, every minute) approves a pending
+// "new_launchpad" submission once it has waited this long without a manual
+// decision — the window in which an admin can still reject it (the
+// moderation webhook pings on every new submission). Only rows younger than
+// AUTO_APPROVE_MAX_AGE_MINUTES are considered, so a submission whose
+// approval keeps failing is left for manual review instead of being retried
+// forever. AUTO_APPROVE_MAX_PER_RUN bounds how much onboarding (and
+// therefore Blockscout/Dexscreener spend) one tick can trigger.
+export const AUTO_APPROVE_AFTER_MINUTES = 5;
+export const AUTO_APPROVE_MAX_AGE_MINUTES = 60;
+export const AUTO_APPROVE_MAX_PER_RUN = 3;

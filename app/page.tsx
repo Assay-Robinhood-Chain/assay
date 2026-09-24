@@ -8,7 +8,8 @@ import { getLaunchpads } from '@/lib/supabase/queries';
 import {
   TARGET_CHAIN,
   MIN_BACKFILL_FULL_THRESHOLD,
-  MAX_BACKFILL_SAMPLE,
+  BACKFILL_SAMPLE_RATIO,
+  BACKFILL_SAMPLE_CAP,
   DIMENSION_LABELS,
   DIMENSION_DESCRIPTIONS,
   DIMENSION_WEIGHTS,
@@ -92,7 +93,7 @@ const STEPS = [
   {
     n: '02',
     title: 'Its tokens get discovered',
-    desc: `A one-time backfill pulls in every launch under ${MIN_BACKFILL_FULL_THRESHOLD}, or the most recent 50% capped at ${MAX_BACKFILL_SAMPLE} for larger launchpads — see the sampling rule on the Coverage page.`,
+    desc: `A one-time backfill pulls in every launch under ${MIN_BACKFILL_FULL_THRESHOLD}, or the most recent ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total for larger launchpads, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()}. See the sampling rule on the Coverage page.`,
   },
   {
     n: '03',

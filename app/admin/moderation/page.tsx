@@ -70,14 +70,32 @@ function describeOnboarding(onboarding: OnboardingResult): {
     const body = backfill.body as {
       sample_size?: number;
       total_launches_upstream?: number | null;
+      score?: {
+        final_score: number;
+        stars: number;
+        is_provisional: boolean;
+      } | null;
+      enrichment?: {
+        status: 'queued' | 'nothing_to_enrich';
+        queued_launches: number;
+      } | null;
     } | null;
+    const scoreText = body?.score
+      ? ` Scored ${body.score.final_score}/100 (${body.score.stars}★${
+          body.score.is_provisional ? ', provisional' : ''
+        }).`
+      : ' No score yet — sample was empty.';
+    const enrichmentText =
+      body?.enrichment?.status === 'queued'
+        ? ` Token-level metrics for ${body.enrichment.queued_launches} launch(es) queued — filling in over the next few minutes as backfill-enrichment runs.`
+        : '';
     return {
       tone: 'up',
       message: `"${onboarding.slug}" onboarded — backfill found ${body?.sample_size ?? 0} launch(es)${
         body?.total_launches_upstream != null
           ? ` of ${body.total_launches_upstream} upstream`
           : ''
-      }.`,
+      }.${scoreText}${enrichmentText}`,
     };
   }
   const errBody = backfill.body as {

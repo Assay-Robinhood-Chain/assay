@@ -42,9 +42,9 @@ export const COLLECTORS: Collector[] = [
   },
   {
     name: "Mobula",
-    provides: "Contract addresses, ABI reference, bonding/graduation logic (docs)",
+    provides: "Price history (OHLCV) → peak multiple, plus liquidity, volume and bonding status for tokens still on a curve",
     status: "online",
-    role: "discovery",
+    role: "metrics",
   },
   {
     name: "Chain RPC watcher",

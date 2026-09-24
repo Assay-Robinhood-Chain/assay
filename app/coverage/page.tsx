@@ -10,7 +10,8 @@ import { getLaunchpads } from '@/lib/supabase/queries';
 import { buildCoverageRows, COLLECTORS } from '@/lib/coverage';
 import {
   MIN_BACKFILL_FULL_THRESHOLD,
-  MAX_BACKFILL_SAMPLE,
+  BACKFILL_SAMPLE_RATIO,
+  BACKFILL_SAMPLE_CAP,
 } from '@/lib/constants';
 
 /** Same accent treatment as the homepage's "method" / "How Assay works"
@@ -90,7 +91,7 @@ export default async function CoveragePage() {
               n="2"
               accent={ACCENT[ACCENT_ORDER[1]]}
               title="Tokens discovered"
-              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else 50% capped at ${MAX_BACKFILL_SAMPLE} — most-recent-first.`}
+              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} — most-recent-first.`}
             />
             <FlowStep
               n="3"

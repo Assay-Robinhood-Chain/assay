@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { computeBackfillSample } from "@/lib/scoring";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { computeBackfillSample } from '@/lib/scoring';
 import {
   MIN_BACKFILL_FULL_THRESHOLD,
-  MAX_BACKFILL_SAMPLE,
   BACKFILL_SAMPLE_RATIO,
-} from "@/lib/constants";
+  BACKFILL_SAMPLE_CAP,
+} from '@/lib/constants';
 
-const PRESETS = [12, 99, 100, 300, 500, 600, 167_000];
+const PRESETS = [12, 99, 100, 500, 4_999, 5_000, 167_000];
 
 export default function BackfillCalculator() {
   const [total, setTotal] = useState(500);
@@ -18,7 +18,10 @@ export default function BackfillCalculator() {
 
   return (
     <div className="rounded-xl border border-line bg-card p-5 sm:p-6">
-      <label className="mb-1.5 block text-[12.5px] font-medium text-ink-soft" htmlFor="total-launches">
+      <label
+        className="mb-1.5 block text-[12.5px] font-medium text-ink-soft"
+        htmlFor="total-launches"
+      >
         Launchpad&rsquo;s total launches at onboarding
       </label>
       <input
@@ -50,25 +53,38 @@ export default function BackfillCalculator() {
         className="mt-5 grid grid-cols-2 gap-4 border-t border-line-soft pt-4"
       >
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-faint">Sample taken</div>
+          <div className="text-[11px] uppercase tracking-wide text-faint">
+            Sample taken
+          </div>
           <div className="font-mono text-2xl font-semibold text-cobalt">
             {sample.toLocaleString()}
           </div>
         </div>
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-faint">Coverage</div>
-          <div className="font-mono text-2xl font-semibold text-ink">{pct}%</div>
+          <div className="text-[11px] uppercase tracking-wide text-faint">
+            Coverage
+          </div>
+          <div className="font-mono text-2xl font-semibold text-ink">
+            {pct}%
+          </div>
         </div>
       </motion.div>
 
       <p className="mt-4 text-[12px] leading-relaxed text-faint">
         {total < MIN_BACKFILL_FULL_THRESHOLD ? (
-          <>Below the {MIN_BACKFILL_FULL_THRESHOLD}-launch floor — every launch is sampled, no rule needed at this size.</>
+          <>
+            Below the {MIN_BACKFILL_FULL_THRESHOLD}-launch floor — every launch
+            is sampled, no rule needed at this size.
+          </>
         ) : (
           <>
-            At or above the {MIN_BACKFILL_FULL_THRESHOLD}-launch floor: take{" "}
-            {BACKFILL_SAMPLE_RATIO * 100}% of total, capped at{" "}
-            {MAX_BACKFILL_SAMPLE.toLocaleString()}, most-recent-first.
+            At or above the {MIN_BACKFILL_FULL_THRESHOLD}-launch floor: take{' '}
+            {BACKFILL_SAMPLE_RATIO * 100}% of total, most-recent-first, capped
+            at {BACKFILL_SAMPLE_CAP.toLocaleString()}
+            {Math.ceil(total * BACKFILL_SAMPLE_RATIO) > BACKFILL_SAMPLE_CAP
+              ? ` (20% would be ${Math.ceil(total * BACKFILL_SAMPLE_RATIO).toLocaleString()} — the cap applies here)`
+              : ''}
+            .
           </>
         )}
       </p>

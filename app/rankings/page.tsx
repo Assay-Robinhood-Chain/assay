@@ -4,6 +4,7 @@ import Reveal from '@/components/Reveal';
 import { PageIcon, type PageIconKind } from '@/components/icons/PageIcon';
 import { getLaunchpads } from '@/lib/supabase/queries';
 import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
+import { hasScore } from '@/lib/scoring';
 
 /** Same accent treatment as the homepage's "method" dimension cards —
  * border tint + glow shadow on hover, plus a top bar that wipes in. */
@@ -36,7 +37,9 @@ export const metadata: Metadata = {
 export default async function RankingsPage() {
   const launchpads = await getLaunchpads();
 
-  const scored = launchpads.filter((lp) => lp.sampleSize > 0);
+  const scored = launchpads.filter(
+    (lp) => lp.sampleSize > 0 && hasScore(lp.score),
+  );
   const avgScore = scored.length
     ? Math.round(
         scored.reduce((sum, lp) => sum + lp.score.finalScore, 0) /

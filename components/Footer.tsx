@@ -64,7 +64,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Assay. Not a registered investment
             adviser.
           </span>
-          <span className="font-mono">algorithm_version: v1.3</span>
+          <span className="font-mono">algorithm_version: v1.6</span>
         </div>
       </div>
     </footer>

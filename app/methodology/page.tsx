@@ -6,12 +6,16 @@ import {
   DIMENSION_LABELS,
   DIMENSION_WEIGHTS,
   MIN_SAMPLE_SIZE_FOR_CONFIDENCE,
+  MIN_DATA_POINTS_PER_DIMENSION,
+  MIN_TOKEN_AGE_HOURS,
+  MIN_DIMENSIONS_FOR_SCORE,
   STAR_1_THRESHOLD,
   STAR_2_THRESHOLD,
   STAR_3_THRESHOLD,
   PROVISIONAL_STAR_CAP,
   MIN_BACKFILL_FULL_THRESHOLD,
-  MAX_BACKFILL_SAMPLE,
+  BACKFILL_SAMPLE_RATIO,
+  BACKFILL_SAMPLE_CAP,
   SCORE_DISCLAIMER,
 } from '@/lib/constants';
 import { DimensionKey } from '@/lib/types';
@@ -169,6 +173,50 @@ export default function MethodologyPage() {
             ))}
           </div>
 
+          <ul className="mt-5 space-y-2 text-[12.5px] leading-relaxed text-muted">
+            <li>
+              <strong className="text-ink-soft">Missing data is never a number.</strong>{' '}
+              A dimension needs data from at least{' '}
+              <span className="font-mono text-[12px]">
+                {MIN_DATA_POINTS_PER_DIMENSION}
+              </span>{' '}
+              launches. Until then it shows n/a, is left out of the composite
+              (the remaining weights are rescaled), and the score is marked
+              provisional.
+            </li>
+            <li>
+              <strong className="text-ink-soft">Young tokens are not judged.</strong>{' '}
+              Quality, Value and Consistency only count tokens at least{' '}
+              <span className="font-mono text-[12px]">{MIN_TOKEN_AGE_HOURS}</span>h
+              old — graduation and price outcomes need time to play out. A
+              composite also needs at least{' '}
+              <span className="font-mono text-[12px]">
+                {MIN_DIMENSIONS_FOR_SCORE}
+              </span>{' '}
+              of the five dimensions measured; with fewer, the launchpad shows
+              as not yet scored rather than a number built from a couple of
+              partial signals.
+            </li>
+            <li>
+              <strong className="text-ink-soft">No market is a zero, not a gap.</strong>{' '}
+              A token that never reached a DEX pool counts as zero liquidity in
+              Market Health rather than being skipped.
+            </li>
+            <li>
+              <strong className="text-ink-soft">Gains, not just stability.</strong>{' '}
+              Value is measured on a log scale from the launch price (a token
+              that never rose scores 0, 10× scores 100), and Consistency is
+              multiplied by how good the typical outcome is — a launchpad whose
+              tokens all flatline is not rewarded for being predictable.
+            </li>
+            <li>
+              <strong className="text-ink-soft">Partial dimensions are capped.</strong>{' '}
+              Where a dimension has several components but only some are
+              measured yet (Mechanism: contract verification is one of three),
+              its score cannot exceed the share that is measured.
+            </li>
+          </ul>
+
           <p className="mt-5 text-[12px] leading-relaxed text-faint">
             Note on dimension count: this document uses five dimensions rather
             than the four referenced in an earlier product brief. Whether to
@@ -278,12 +326,15 @@ export default function MethodologyPage() {
             </li>
             <li>
               <strong className="text-ink-soft">
-                Cap at {MAX_BACKFILL_SAMPLE}:
+                {BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at{' '}
+                {BACKFILL_SAMPLE_CAP.toLocaleString()}:
               </strong>{' '}
-              beyond this, additional samples buy negligible accuracy against
-              real API cost — the margin of error on an estimated rate at{' '}
-              {MAX_BACKFILL_SAMPLE} samples is already comfortably tighter than
-              the noise in the underlying on-chain data.
+              the sample scales with the launchpad up to the cap — a launchpad
+              with 500 total launches backfills 100, one with 5,000 backfills
+              1,000, and one with 276,000 also backfills 1,000. The cap keeps a
+              very large launchpad from exhausting the upstream data APIs; at
+              that size a thousand launches already pins a rate such as
+              graduation to within about three percentage points.
             </li>
             <li>
               <strong className="text-ink-soft">

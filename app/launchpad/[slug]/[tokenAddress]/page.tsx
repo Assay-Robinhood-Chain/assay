@@ -6,7 +6,12 @@ import {
   getLaunchpads,
   getLaunchBySlugAndAddress,
 } from '@/lib/supabase/queries';
-import { formatDate, formatMultiple, formatUsd } from '@/lib/scoring';
+import {
+  formatDate,
+  formatMultiple,
+  formatUsd,
+  shortAddress,
+} from '@/lib/scoring';
 import Reveal from '@/components/Reveal';
 import { PageIcon } from '@/components/icons/PageIcon';
 
@@ -27,9 +32,10 @@ export async function generateMetadata({
     getLaunchpadBySlug(slug),
   ]);
   if (!launch || !lp) return {};
+  const label = launch.name || shortAddress(launch.tokenAddress);
   return {
-    title: `${launch.name} (${launch.symbol}) — ${lp.name} — Assay`,
-    description: `Launch telemetry for ${launch.name}, launched on ${lp.name}.`,
+    title: `${label}${launch.symbol ? ` (${launch.symbol})` : ''} — ${lp.name} — Assay`,
+    description: `Launch telemetry for ${label}, launched on ${lp.name}.`,
   };
 }
 
@@ -68,10 +74,12 @@ export default async function TokenDetailPage({
                 Token · launched on {lp.name}
               </p>
               <h1 className="mt-1.5 text-xl font-semibold text-ink sm:text-2xl">
-                {launch.name}
-                <span className="ml-2 text-base font-normal text-muted">
-                  {launch.symbol}
-                </span>
+                {launch.name || shortAddress(launch.tokenAddress)}
+                {launch.symbol && (
+                  <span className="ml-2 text-base font-normal text-muted">
+                    {launch.symbol}
+                  </span>
+                )}
               </h1>
               <p className="mt-1.5 break-all font-mono text-[12px] text-faint">
                 {launch.tokenAddress} · {lp.chain}
@@ -115,28 +123,30 @@ export default async function TokenDetailPage({
               {launch.isGraduated ? 'Graduated' : 'Not yet graduated'}
             </KvRow>
             <KvRow k="Confirmed rugpull">
-              {launch.isConfirmedRugpull ? 'Yes' : 'No'}
+              {launch.isConfirmedRugpull ? 'Yes' : 'Not tracked yet'}
             </KvRow>
             <KvRow k="Wash-trading flag">
               {launch.washTradingFlag
                 ? 'Flagged — elevated volume/trader ratio'
-                : 'None'}
+                : 'Not tracked yet'}
             </KvRow>
           </dl>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {!launch.washTradingFlag && (
-              <Flag tone="up">✓ no wash-trading flags</Flag>
-            )}
-            {launch.washTradingFlag && (
+          {launch.washTradingFlag && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
               <Flag tone="gold">Wash-trading flag</Flag>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </Reveal>
 
       <p className="mt-6 text-[12px] leading-relaxed text-faint">
-        Data synchronized from Dexscreener &amp; Blockscout, refreshed on the
-        latest hourly ingestion epoch.
+        Data synchronized from Dexscreener, Blockscout &amp; Mobula, refreshed
+        on the latest hourly ingestion epoch. Liquidity and 24h volume come
+        from Dexscreener for tokens with a DEX pool and from Mobula for tokens
+        still on a bonding curve; a token neither source knows shows a dash.
+        Peak multiple comes from Mobula price candles and stays a dash until
+        the token has price history. Rugpull and wash-trading detection are
+        not tracked yet.
       </p>
     </div>
   );

@@ -233,6 +233,18 @@ export default function SubmitPage() {
     (isNewLaunchpad ? Boolean(factoryAddress) : true) &&
     (fieldUpdate ? Boolean(fieldValue) : Boolean(context));
 
+  // Required inputs that are still empty, shown above the submit button
+  // so the person knows exactly what's blocking "Submit".
+  const missingFields: string[] = [];
+  if (!launchpadLabel) {
+    missingFields.push(isNewLaunchpad ? 'Launchpad name' : 'Launchpad');
+  }
+  if (isNewLaunchpad && !factoryAddress) {
+    missingFields.push('Factory Contract Address');
+  }
+  if (fieldUpdate && !fieldValue) missingFields.push(fieldUpdate.label);
+  if (!fieldUpdate && !context) missingFields.push('Description');
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -364,6 +376,10 @@ export default function SubmitPage() {
                   <p className="mt-1 text-[13px] text-muted">
                     It's in the moderation queue now. You'll see it reflected on
                     the launchpad's page once verified.
+                  </p>
+                  <p className="mx-auto mt-3 max-w-sm rounded-lg border border-line bg-paper px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
+                    Please allow up to 1×24 hours for the review and for your
+                    data to be added.
                   </p>
                   <button
                     onClick={reset}
@@ -513,15 +529,15 @@ export default function SubmitPage() {
                   <div>
                     <label className="mb-1.5 block text-[13px] font-semibold text-ink">
                       {fieldUpdate
-                        ? 'Additional Context (optional)'
-                        : 'Context / Supporting Links'}
+                        ? 'Additional Description (optional)'
+                        : 'Description'}
                     </label>
                     <textarea
                       required={!fieldUpdate}
                       rows={4}
                       value={context}
                       onChange={(e) => setContext(e.target.value)}
-                      placeholder="Provide details or paste transaction/commit links here…"
+                      placeholder="Describe the launchpad, or add any supporting links here…"
                       className="w-full resize-none rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
                     />
                     {category !== 'note' && (
@@ -548,6 +564,22 @@ export default function SubmitPage() {
                       Used solely if verification team requires clarification.
                     </p>
                   </div>
+
+                  {missingFields.length > 0 && (
+                    <div
+                      role="status"
+                      className="rounded-lg border border-line bg-paper px-3 py-2.5 text-[12.5px] text-ink-soft"
+                    >
+                      <p className="font-semibold text-ink">
+                        Still required before you can submit:
+                      </p>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                        {missingFields.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {errorMsg && (
                     <p className="rounded-lg border border-down/30 bg-down-soft px-3 py-2 text-[12.5px] text-down">

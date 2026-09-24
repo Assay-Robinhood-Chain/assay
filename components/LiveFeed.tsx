@@ -79,7 +79,7 @@ function makeEvent(id: number, lp: Launchpad): FeedEvent {
     source: 'Scorer',
     lpSlug: lp.slug,
     lpName: lp.name,
-    detail: `Composite recomputed · algorithm_version v1.3`,
+    detail: `Composite recomputed · algorithm_version v1.6`,
     ms: 5 + Math.floor(Math.random() * 15),
   };
 }

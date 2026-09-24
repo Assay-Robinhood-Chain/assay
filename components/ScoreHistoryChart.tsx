@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { motion, type Easing } from "framer-motion";
-import { ScoreHistoryPoint } from "@/lib/types";
-import { formatDate } from "@/lib/scoring";
-import { useId, useState } from "react";
+import { motion, type Easing } from 'framer-motion';
+import { ScoreHistoryPoint } from '@/lib/types';
+import { formatDate } from '@/lib/scoring';
+import { useId, useState } from 'react';
 
 const EASE: Easing = [0.22, 1, 0.36, 1];
 
@@ -11,11 +11,17 @@ const WIDTH = 640;
 const HEIGHT = 200;
 const PAD = 24;
 
-export default function ScoreHistoryChart({ points }: { points: ScoreHistoryPoint[] }) {
+export default function ScoreHistoryChart({
+  points,
+}: {
+  points: ScoreHistoryPoint[];
+}) {
   const clipId = useId();
   const [hover, setHover] = useState<number | null>(null);
 
-  if (points.length < 2) {
+  const yFor = (v: number) => HEIGHT - PAD - (v / 100) * (HEIGHT - PAD * 2);
+
+  if (points.length === 0) {
     return (
       <div className="grid h-[200px] place-items-center rounded-lg border border-line-soft bg-panel text-sm text-muted">
         Not enough history yet
@@ -23,12 +29,66 @@ export default function ScoreHistoryChart({ points }: { points: ScoreHistoryPoin
     );
   }
 
-  const xFor = (i: number) => PAD + (i / (points.length - 1)) * (WIDTH - PAD * 2);
-  const yFor = (v: number) => HEIGHT - PAD - (v / 100) * (HEIGHT - PAD * 2);
+  // One day recorded so far: a line needs two points, but today's score
+  // is real and worth showing. Draw it as a single marker plus a caption.
+  if (points.length === 1) {
+    const only = points[0];
+    return (
+      <div>
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="h-[200px] w-full"
+          role="img"
+          aria-label={`Score ${only.finalScore.toFixed(1)} on ${formatDate(only.date)}`}
+        >
+          {[0, 25, 50, 75, 100].map((v) => (
+            <line
+              key={v}
+              x1={PAD}
+              x2={WIDTH - PAD}
+              y1={yFor(v)}
+              y2={yFor(v)}
+              stroke="var(--line)"
+              strokeWidth={1}
+            />
+          ))}
+          <circle
+            cx={WIDTH / 2}
+            cy={yFor(only.finalScore)}
+            r={11}
+            fill="var(--cobalt)"
+            opacity={0.18}
+          />
+          <circle
+            cx={WIDTH / 2}
+            cy={yFor(only.finalScore)}
+            r={5}
+            fill="var(--cobalt)"
+          />
+        </svg>
+        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+          <span className="font-mono font-medium text-ink">
+            {only.finalScore.toFixed(1)}
+          </span>
+          <span className="ml-2 text-faint">{formatDate(only.date)}</span>
+          <span className="ml-2">
+            — only one day recorded so far. The trend line appears once a second
+            daily score is saved.
+          </span>
+        </p>
+      </div>
+    );
+  }
+
+  const xFor = (i: number) =>
+    PAD + (i / (points.length - 1)) * (WIDTH - PAD * 2);
 
   const d = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(p.finalScore).toFixed(1)}`)
-    .join(" ");
+    .map(
+      (p, i) =>
+        `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(p.finalScore).toFixed(1)}`,
+    )
+    .join(' ');
 
   const areaD = `${d} L ${xFor(points.length - 1).toFixed(1)} ${HEIGHT - PAD} L ${xFor(0)} ${
     HEIGHT - PAD
@@ -100,7 +160,7 @@ export default function ScoreHistoryChart({ points }: { points: ScoreHistoryPoin
         {points.map((p, i) => (
           <rect
             key={`hit-${p.date}`}
-            x={xFor(i) - (WIDTH / points.length) / 2}
+            x={xFor(i) - WIDTH / points.length / 2}
             y={0}
             width={WIDTH / points.length}
             height={HEIGHT}
@@ -115,7 +175,9 @@ export default function ScoreHistoryChart({ points }: { points: ScoreHistoryPoin
           <span className="font-mono font-medium text-ink">
             {points[hover].finalScore.toFixed(1)}
           </span>
-          <span className="ml-2 text-faint">{formatDate(points[hover].date)}</span>
+          <span className="ml-2 text-faint">
+            {formatDate(points[hover].date)}
+          </span>
         </div>
       )}
     </div>

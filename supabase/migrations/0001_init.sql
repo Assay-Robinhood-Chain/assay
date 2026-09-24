@@ -198,10 +198,11 @@ create policy "public insert submissions" on public.launchpad_submissions
 -- Community-licensed and may not be available on hosted Supabase —
 -- see README.md > "Database" for the manual-downsample alternative
 -- (a pg_cron job pruning + aggregating rows older than
--- SNAPSHOT_RETENTION_DAYS). At Assay's current scale (sample capped
--- at 250 launches per launchpad, see backfill-sampling-policy.md)
--- a plain indexed table is very likely enough — treat this as a
--- later optimization, not a launch blocker.
+-- SNAPSHOT_RETENTION_DAYS). At Assay's current scale (backfill sample
+-- sized at 20% of each launchpad's upstream total, no fixed cap — see
+-- backfill-sampling-policy.md) a plain indexed table is very likely
+-- enough for most launchpads; re-check this once a very large factory
+-- is onboarded, since its sample now scales with it.
 --
 -- create extension if not exists timescaledb;
 -- select create_hypertable('public.launch_metrics_snapshot', 'snapshot_at', if_not_exists => true);
