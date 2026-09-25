@@ -407,7 +407,8 @@ body {
  * same tokens every existing table class already reads (bg-card,
  * border-line, text-ink, text-up, bg-up-soft, etc.), so no class names
  * in CoverageTable.tsx need to change. */
-.coverage-dark-surface {
+.coverage-dark-surface,
+.night-surface {
   --card: #201f1c;
   --line: #302f2a;
   --line-soft: #262620;
