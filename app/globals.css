@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --paper: #faf9f6;
@@ -45,7 +45,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme='light']) {
     --paper: #161614;
     --panel: #1d1d1a;
     --card: #201f1c;
@@ -67,7 +67,7 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   --paper: #161614;
   --panel: #1d1d1a;
   --card: #201f1c;
@@ -89,8 +89,11 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans:
+    var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --color-paper: var(--paper);
   --color-panel: var(--panel);
@@ -195,17 +198,20 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .card-hover:hover {
+  :root:not([data-theme='light']) .card-hover:hover {
     box-shadow: 0 14px 32px -16px rgba(122, 156, 255, 0.28);
   }
 }
 
-:root[data-theme="dark"] .card-hover:hover {
+:root[data-theme='dark'] .card-hover:hover {
   box-shadow: 0 14px 32px -16px rgba(122, 156, 255, 0.28);
 }
 
 .icon-chip {
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
 }
 
 .card-hover:hover .icon-chip {
@@ -214,135 +220,257 @@ body {
   transform: scale(1.06);
 }
 
-/* Rankings stat cards: thin border that matches --ink (black in light
- * theme) at rest; in dark theme the card would otherwise blend into the
- * equally-dark page, so the border goes white and thicker to separate it.
- * Plain, unlayered CSS — same pattern as .card-hover above — so it wins
- * over Tailwind's layered "border" utility regardless of class order. */
-.rank-stat-card {
-  border-width: 1.5px;
+/* Reusable dark-fill card treatment (Rankings, homepage, and other pages):
+ * fixed dark background (bg-[#141413], the same hex as the homepage's
+ * "See the Measurements" button) regardless of site theme. The border is
+ * the only themed part: thin/black at rest, white and thicker in dark
+ * theme so the card doesn't blend into an equally-dark page. Plain,
+ * unlayered CSS — same pattern as .card-hover above — so it wins over
+ * Tailwind's layered "border" utility regardless of class order. */
+.dark-card {
+  border-width: 1px;
   border-color: var(--ink);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .rank-stat-card {
-    border-width: 1.5px;
+  :root:not([data-theme='light']) .dark-card {
+    border-width: 1px;
     border-color: #ffffff;
   }
 }
 
-:root[data-theme="dark"] .rank-stat-card {
-  border-width: 1.5px;
+:root[data-theme='dark'] .dark-card {
+  border-width: 1px;
   border-color: #ffffff;
 }
 
-/* Reusable "card surface" — any block of UI that should always sit on
- * the SAME fixed dark surface as the stat cards (--surface-dark,
- * #141413), regardless of site theme. Used on the rankings table +
- * filter buttons, and on Get Listed's step cards / form / payload
- * preview. Text/line colors use the existing --night-* tokens made for
- * content on --surface-dark, so they stay legible on that fixed-dark
- * fill in both themes. Unconditional (not scoped to a dark-mode media
- * query), same as the stat cards, so light and dark site themes render
- * it identically. Scoping the theme variables themselves — rather than
- * individual classes — means every background, text, and accent color
- * already built from them (bg-card, bg-paper, text-ink, text-up/gold/
- * down, etc.) updates together with no component markup changes. */
-.card-surface {
-  --card: var(--surface-dark);
-  --panel: var(--surface-dark-soft);
-  --paper: var(--surface-dark-soft);
-  --line: var(--night-border);
-  --line-soft: var(--night-border);
-  --ink: var(--night-ink);
-  --ink-soft: var(--night-soft);
-  --muted: var(--night-soft);
-  --faint: var(--night-faint);
-  --cobalt: var(--night-cobalt);
+/* "From onboarding to a live score" flow section (Coverage page):
+ * outer panel stays the fixed dark surface in both themes (border color
+ * handled by .dark-card above). Light theme swaps in a yellow pill for
+ * the section label and yellow inner step cards; dark theme keeps the
+ * original dark look. */
+.flow-panel {
+  background: #141413;
+}
+
+.flow-title-pill {
+  background: #e8e402;
+  border-color: #141413;
+  color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .flow-title-pill {
+    background: transparent;
+    border-color: transparent;
+    color: #6e6c63;
+  }
+}
+
+:root[data-theme='dark'] .flow-title-pill {
+  background: transparent;
+  border-color: transparent;
+  color: #6e6c63;
+}
+
+.flow-step {
+  background: #1b1b18;
+  border-color: #302f2a;
+}
+
+/* Pipeline step icon badge (Coverage page): light theme shows a yellow
+ * badge with a dark icon; dark theme swaps back to each step's original
+ * accent badge (soft accent background, accent-colored icon). */
+.pipeline-badge {
+  background: #e8e402;
+  color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .pipeline-badge-cobalt {
+    background: var(--cobalt-soft);
+    color: var(--cobalt);
+  }
+  :root:not([data-theme='light']) .pipeline-badge-gold {
+    background: var(--gold-soft);
+    color: var(--gold);
+  }
+  :root:not([data-theme='light']) .pipeline-badge-up {
+    background: var(--up-soft);
+    color: var(--up);
+  }
+  :root:not([data-theme='light']) .pipeline-badge-faint {
+    background: var(--panel);
+    color: var(--faint);
+  }
+}
+
+:root[data-theme='dark'] .pipeline-badge-cobalt {
+  background: var(--cobalt-soft);
+  color: var(--cobalt);
+}
+:root[data-theme='dark'] .pipeline-badge-gold {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+:root[data-theme='dark'] .pipeline-badge-up {
+  background: var(--up-soft);
+  color: var(--up);
+}
+:root[data-theme='dark'] .pipeline-badge-faint {
+  background: var(--panel);
+  color: var(--faint);
+}
+
+/* Each step's top accent bar + number: black on the yellow light-theme
+ * card, back to the original per-step accent color (cobalt/up/gold) on
+ * the dark theme card. */
+.flow-bar-cobalt,
+.flow-bar-up,
+.flow-bar-gold,
+.flow-bar-faint {
+  background-color: #141413;
+}
+
+.flow-num-cobalt,
+.flow-num-up,
+.flow-num-gold {
+  color: #141413;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .flow-bar-cobalt {
+    background-color: var(--cobalt);
+  }
+  :root:not([data-theme='light']) .flow-bar-up {
+    background-color: var(--up);
+  }
+  :root:not([data-theme='light']) .flow-bar-gold {
+    background-color: var(--gold);
+  }
+  :root:not([data-theme='light']) .flow-bar-faint {
+    background-color: var(--faint);
+  }
+  :root:not([data-theme='light']) .flow-num-cobalt {
+    color: var(--cobalt);
+  }
+  :root:not([data-theme='light']) .flow-num-up {
+    color: var(--up);
+  }
+  :root:not([data-theme='light']) .flow-num-gold {
+    color: var(--gold);
+  }
+}
+
+:root[data-theme='dark'] .flow-bar-cobalt {
+  background-color: var(--cobalt);
+}
+:root[data-theme='dark'] .flow-bar-up {
+  background-color: var(--up);
+}
+:root[data-theme='dark'] .flow-bar-gold {
+  background-color: var(--gold);
+}
+:root[data-theme='dark'] .flow-bar-faint {
+  background-color: var(--faint);
+}
+:root[data-theme='dark'] .flow-num-cobalt {
+  color: var(--cobalt);
+}
+:root[data-theme='dark'] .flow-num-up {
+  color: var(--up);
+}
+:root[data-theme='dark'] .flow-num-gold {
+  color: var(--gold);
+}
+
+/* Coverage table (Coverage page): the yellow header row and the
+ * discovery-source pill always render in the brand yellow, in both
+ * light and dark theme, matching the always-dark table body below. */
+.coverage-thead {
+  background: #e8e402;
+}
+
+.coverage-th-text {
+  color: #141413;
+}
+
+.discovery-badge {
+  background: #e8e402;
+  border-color: #141413;
+  color: #141413;
+}
+
+/* Coverage table body: always renders with the dark-theme palette,
+ * regardless of the site's current light/dark setting — only the header
+ * row above stays theme-adaptive yellow/panel. Locally overrides the
+ * same tokens every existing table class already reads (bg-card,
+ * border-line, text-ink, text-up, bg-up-soft, etc.), so no class names
+ * in CoverageTable.tsx need to change. */
+.coverage-dark-surface {
+  --card: #201f1c;
+  --line: #302f2a;
+  --line-soft: #262620;
+  --panel: #1d1d1a;
+  --ink: #f3f1ea;
+  --ink-soft: #b5b2a6;
+  --muted: #a6a498;
+  --faint: #6e6c63;
+  --cobalt: #7a9cff;
   --cobalt-soft: rgba(122, 156, 255, 0.14);
-  --gold: var(--night-gold);
+  --gold: #e0b04d;
   --gold-soft: rgba(224, 176, 77, 0.14);
-  --up: var(--night-up);
+  --up: #4ade9a;
   --up-soft: rgba(74, 222, 154, 0.12);
-  --down: var(--night-down);
+  --down: #ff7a6e;
   --down-soft: rgba(255, 122, 110, 0.14);
 }
 
-/* Card boundaries (outer wrappers, buttons, avatars, badges, inputs)
- * get the exact same reactive border as .rank-stat-card — thin/black
- * at rest, white and separating in dark theme — rather than a fixed
- * color, since --ink above is now fixed light and can't double as the
- * theme-reactive border color the way it does on a normal card. Inner
- * row dividers keep the soft night-border tint as-is; a bold line
- * between every row would be clutter, not a card edge. */
-.card-surface [class~="border-line"] {
-  border-width: 1.5px;
-  border-color: #141413;
+/* Coverage page stats strip — brand yellow (#e8e402, same as the filter
+ * pills) in light theme. In dark theme it reverts to the original neutral
+ * panel surface instead of yellow, and the text goes back to the theme's
+ * normal adaptive ink/muted colors; only light theme forces dark text
+ * (needed for contrast against the yellow). */
+.stats-row-cell {
+  background: #e8e402;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .card-surface [class~="border-line"] {
-    border-color: #ffffff;
+  :root:not([data-theme='light']) .stats-row-cell {
+    background: var(--panel);
   }
 }
 
-:root[data-theme="dark"] .card-surface [class~="border-line"] {
-  border-color: #ffffff;
+:root[data-theme='dark'] .stats-row-cell {
+  background: var(--panel);
 }
 
-/* Smooth color transition for every fixed/reactive surface above. None
- * of these elements carry their own transition (unlike the stat cards,
- * which already animate via Tailwind's transition-all for their hover
- * state), so background-color, border-color and text color would
- * otherwise snap instantly whenever the site theme toggles. */
-.card-surface,
-.card-surface *,
-.ticker-surface,
-.ticker-surface *,
-.layout-surface,
-.layout-surface * {
-  transition:
-    background-color 0.3s ease,
-    border-color 0.3s ease,
-    color 0.3s ease;
-}
-
-/* Ticker bar: same theme-reactive border as the stat cards and table —
- * thin/black at rest, white in dark theme — instead of the fixed
- * --night-border tint, which never changes and so had nothing visible
- * to transition when the theme toggles. */
-.ticker-surface {
-  border-width: 1.5px;
-  border-color: #141413;
+.stats-row-value-default {
+  color: #141413;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .ticker-surface {
-    border-color: #ffffff;
+  :root:not([data-theme='light']) .stats-row-value-default {
+    color: var(--ink);
   }
 }
 
-:root[data-theme="dark"] .ticker-surface {
-  border-color: #ffffff;
+:root[data-theme='dark'] .stats-row-value-default {
+  color: var(--ink);
 }
 
-/* Navbar / footer: same bold theme-reactive border, at the same 1.5px
- * weight, as the ticker bar and stat cards — instead of the subtle
- * --line tint at the default 1px (barely visible, especially in dark
- * theme against a dark page). */
-.layout-surface {
-  border-width: 1.5px;
-  border-color: #141413;
+.stats-row-label {
+  color: rgba(20, 20, 19, 0.7);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .layout-surface {
-    border-color: #ffffff;
+  :root:not([data-theme='light']) .stats-row-label {
+    color: var(--muted);
   }
 }
 
-:root[data-theme="dark"] .layout-surface {
-  border-color: #ffffff;
+:root[data-theme='dark'] .stats-row-label {
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

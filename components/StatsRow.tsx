@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
+import { motion } from 'framer-motion';
 
 export interface StatItem {
   label: string;
   value: string;
-  tone?: "up" | "gold" | "down" | "default";
+  tone?: 'up' | 'gold' | 'down' | 'default';
 }
 
-const TONE_CLASS: Record<NonNullable<StatItem["tone"]>, string> = {
-  up: "text-up",
-  gold: "text-gold",
-  down: "text-down",
-  default: "text-ink",
+const TONE_CLASS: Record<NonNullable<StatItem['tone']>, string> = {
+  up: 'text-up',
+  gold: 'text-gold',
+  down: 'text-down',
+  default: 'stats-row-value-default',
 };
 
 export default function StatsRow({ items }: { items: StatItem[] }) {
@@ -25,12 +25,14 @@ export default function StatsRow({ items }: { items: StatItem[] }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: i * 0.05 }}
-          className="bg-card px-4 py-4 transition-colors duration-300 hover:bg-panel/60 sm:px-5"
+          className="stats-row-cell px-4 py-4 transition-colors duration-300 sm:px-5"
         >
-          <div className={`font-mono text-xl font-semibold ${TONE_CLASS[it.tone ?? "default"]}`}>
+          <div
+            className={`font-mono text-xl font-semibold ${TONE_CLASS[it.tone ?? 'default']}`}
+          >
             {it.value}
           </div>
-          <div className="mt-0.5 text-[11.5px] text-muted">{it.label}</div>
+          <div className="stats-row-label mt-0.5 text-[11.5px]">{it.label}</div>
         </motion.div>
       ))}
     </div>

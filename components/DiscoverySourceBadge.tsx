@@ -1,10 +1,10 @@
-import { DiscoverySource } from "@/lib/types";
-import { DISCOVERY_SOURCE_LABELS } from "@/lib/constants";
+import { DiscoverySource } from '@/lib/types';
+import { DISCOVERY_SOURCE_LABELS } from '@/lib/constants';
 
 const DOT: Record<DiscoverySource, string> = {
-  bitquery: "bg-cobalt",
-  mobula: "bg-gold",
-  rpc_self_indexed: "bg-muted",
+  bitquery: 'bg-cobalt',
+  mobula: 'bg-gold',
+  rpc_self_indexed: 'bg-muted',
 };
 
 export default function DiscoverySourceBadge({
@@ -15,7 +15,7 @@ export default function DiscoverySourceBadge({
   href?: string;
 }) {
   const content = (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-2.5 py-1 text-[11px] font-medium text-ink-soft">
+    <span className="discovery-badge inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium">
       <span className={`h-1.5 w-1.5 rounded-full ${DOT[source]}`} />
       {DISCOVERY_SOURCE_LABELS[source]}
     </span>
@@ -23,7 +23,12 @@ export default function DiscoverySourceBadge({
 
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="hover:opacity-80">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="hover:opacity-80"
+      >
         {content}
       </a>
     );

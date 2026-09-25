@@ -60,10 +60,10 @@ export default async function CoveragePage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
-        <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+        <p className="mb-3 inline-block rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
           Coverage &amp; gaps
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="text-3xl font-semibold font-mono tracking-tight text-ink">
           What&rsquo;s indexed, right now
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
@@ -76,31 +76,40 @@ export default async function CoveragePage() {
 
       {/* Flow: launchpad -> discover tokens -> backfill -> score -> cronjob */}
       <Reveal delay={0.05} className="mt-8">
-        <section className="rounded-2xl border border-line bg-card p-6 sm:p-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">
+        <section
+          className={`flow-panel dark-card group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.cobalt.border} ${ACCENT.cobalt.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
+          />
+          <h2 className="flow-title-pill inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
             From onboarding to a live score
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-4">
             <FlowStep
               n="1"
+              tone={ACCENT_ORDER[0]}
               accent={ACCENT[ACCENT_ORDER[0]]}
               title="Launchpad added"
               desc="Name, slug, deployer address recorded. Docs checked for a Bitquery/Mobula entry."
             />
             <FlowStep
               n="2"
+              tone={ACCENT_ORDER[1]}
               accent={ACCENT[ACCENT_ORDER[1]]}
               title="Tokens discovered"
               desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} — most-recent-first.`}
             />
             <FlowStep
               n="3"
+              tone={ACCENT_ORDER[2]}
               accent={ACCENT[ACCENT_ORDER[2]]}
               title="Scored"
               desc="5 weighted dimensions, clamped 0–100, gated by sample size before a star rating is shown."
             />
             <FlowStep
               n="4"
+              tone={ACCENT_ORDER[0]}
               accent={ACCENT[ACCENT_ORDER[0]]}
               title="Kept current"
               desc="Hourly ingestion rotation + a daily scoring sweep — no manual step re-runs this."
@@ -110,13 +119,12 @@ export default async function CoveragePage() {
       </Reveal>
 
       {/* Stats */}
-      <Reveal delay={0.08} className="mt-8">
+      <Reveal delay={0.08} className="mt-8 ">
         <StatsRow
           items={[
             {
               label: 'Collectors online',
               value: `${onlineCollectors} / ${COLLECTORS.length}`,
-              tone: 'up',
             },
             {
               label: 'Launchpads tracked',
@@ -133,83 +141,128 @@ export default async function CoveragePage() {
 
       {/* Cron status */}
       <Reveal delay={0.1} className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Cronjob status
-        </h2>
-        <CronStatus />
+        <section
+          className={`flow-panel dark-card group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.up.border} ${ACCENT.up.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.up.bar}`}
+          />
+          <h2 className="flow-title-pill mb-3 inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
+            Cronjob status
+          </h2>
+          <CronStatus />
+        </section>
       </Reveal>
 
       {/* Pipeline architecture */}
       <Reveal delay={0.05} className="mt-10">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Pipeline architecture
-        </h2>
-        <PipelineFlow />
+        <section
+          className={`flow-panel dark-card group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.gold.border} ${ACCENT.gold.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.gold.bar}`}
+          />
+          <h2 className="flow-title-pill mb-3 inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
+            Pipeline architecture
+          </h2>
+          <PipelineFlow />
+        </section>
       </Reveal>
 
       {/* Collectors */}
       <Reveal delay={0.05} className="mt-10">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Active collectors
-        </h2>
-        <ActiveCollectors />
+        <section
+          className={`dark-card group relative overflow-hidden rounded-2xl border bg-[#141413] p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.cobalt.border} ${ACCENT.cobalt.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
+          />
+          <h2 className="flow-title-pill mb-3 inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
+            Active collectors
+          </h2>
+          <ActiveCollectors />
+        </section>
       </Reveal>
 
       {/* Coverage table */}
       <Reveal delay={0.05} className="mt-10">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Indexed launchpads &amp; sources
-        </h2>
-        <CoverageTable rows={rows} />
-        <p className="mt-3 text-[12px] leading-relaxed text-faint">
-          Confidence floor here is a coarse, display-only read on sample size —
-          not the scoring engine's binary confidence gate (see Methodology). A
-          launchpad can be &ldquo;high&rdquo; coverage and still carry a low
-          score.
-        </p>
+        <section
+          className={`dark-card group relative overflow-hidden rounded-2xl border bg-[#141413] p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.up.border} ${ACCENT.up.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.up.bar}`}
+          />
+          <h2 className="flow-title-pill mb-3 inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
+            Indexed launchpads &amp; sources
+          </h2>
+          <CoverageTable rows={rows} />
+          <p className="mt-3 text-[12px] leading-relaxed text-[#6e6c63]">
+            Confidence floor here is a coarse, display-only read on sample size
+            — not the scoring engine's binary confidence gate (see Methodology).
+            A launchpad can be &ldquo;high&rdquo; coverage and still carry a low
+            score.
+          </p>
+        </section>
       </Reveal>
 
       {/* Live feed */}
       <Reveal delay={0.05} className="mt-10">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-faint">
-            Live feed
-          </h2>
-          <span className="font-mono text-[11px] text-faint">
-            simulated — for illustration
-          </span>
-        </div>
-        <LiveFeed launchpads={launchpads} />
+        <section
+          className={`dark-card group relative overflow-hidden rounded-2xl border bg-[#141413] p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 sm:p-8 ${ACCENT.gold.border} ${ACCENT.gold.glow}`}
+        >
+          <span
+            className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.gold.bar}`}
+          />
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flow-title-pill inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
+              Live feed
+            </h2>
+            <span className="font-mono text-[11px] text-[#6e6c63]">
+              simulated — for illustration
+            </span>
+          </div>
+          <LiveFeed launchpads={launchpads} />
+        </section>
       </Reveal>
     </div>
   );
 }
+
+/** Card-level hover glow, matching ActiveCollectors' reference intensity
+ * (stronger than the big panel wrappers' softer ACCENT.glow above). */
+const CARD_GLOW: Record<Accent, string> = {
+  cobalt: 'hover:shadow-[0_18px_40px_-20px_var(--cobalt)]',
+  up: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
+  gold: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
+};
 
 function FlowStep({
   n,
   title,
   desc,
   accent,
+  tone,
 }: {
   n: string;
   title: string;
   desc: string;
   accent: { text: string; border: string; glow: string; bar: string };
+  tone: Accent;
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-xl border border-line-soft bg-panel p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+      className={`flow-step group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ease-out hover:-translate-y-1 ${accent.border} ${CARD_GLOW[tone]}`}
     >
       <span
         className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
       />
-      <span
-        className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
-      >
-        {n}
-      </span>
-      <div className="mt-1 text-[13px] font-medium text-ink">{title}</div>
-      <p className="mt-1 text-[12px] leading-relaxed text-muted">{desc}</p>
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[11px] text-night-soft transition-colors duration-300">
+          {n}
+        </span>
+        <div className="text-[13px] font-medium text-night-ink">{title}</div>
+      </div>
+      <p className="mt-1 text-[12px] leading-relaxed text-night-soft">{desc}</p>
     </div>
   );
 }

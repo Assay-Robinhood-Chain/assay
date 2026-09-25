@@ -83,13 +83,13 @@ export default async function RankingsPage() {
   };
 
   return (
-    <div className="rank-page mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+    <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
-        <p className="mb-3 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
           <PageIcon kind="list" size={13} />
           Full directory
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="text-3xl font-semibold font-mono tracking-tight text-ink">
           Rankings
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
@@ -111,21 +111,25 @@ export default async function RankingsPage() {
           return (
             <Reveal key={s.label} delay={0.05 + i * 0.05}>
               <div
-                className={`rank-stat-card group relative overflow-hidden rounded-xl border bg-[#141413] p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                className={`dark-card group relative overflow-hidden rounded-xl border bg-[#141413] p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
               >
                 <span
                   className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                 />
-                <div
-                  className={`icon-chip grid h-7 w-7 place-items-center rounded-lg ${toneCls[s.tone]}`}
-                >
-                  <PageIcon kind={s.icon} size={14} />
-                </div>
-                <div className="mt-3 font-mono text-xl font-bold text-[#f3f1ea]">
-                  {s.value}
-                </div>
-                <div className="mt-0.5 text-[12px] tracking-normal text-[#b5b2a6]">
-                  {s.label}
+                <div className="flex items-start gap-2">
+                  <div
+                    className={`icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg ${toneCls[s.tone]}`}
+                  >
+                    <PageIcon kind={s.icon} size={14} />
+                  </div>
+                  <div>
+                    <div className="text-[12px] tracking-normal text-[#b5b2a6]">
+                      {s.label}
+                    </div>
+                    <div className="mt-1 font-mono text-xl font-bold text-[#f3f1ea]">
+                      {s.value}
+                    </div>
+                  </div>
                 </div>
               </div>
             </Reveal>
@@ -134,9 +138,7 @@ export default async function RankingsPage() {
       </div>
 
       <Reveal delay={0.25} className="mt-8">
-        <div className="card-surface">
-          <DirectoryTable launchpads={launchpads} />
-        </div>
+        <DirectoryTable launchpads={launchpads} />
       </Reveal>
 
       <p className="mt-8 max-w-2xl text-[12px] leading-relaxed text-faint">

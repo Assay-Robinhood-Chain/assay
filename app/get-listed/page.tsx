@@ -6,11 +6,10 @@ import Reveal from '@/components/Reveal';
 import { PageIcon, type PageIconKind } from '@/components/icons/PageIcon';
 import { createClient } from '@/lib/supabase/client';
 
-/** Same accent treatment as the homepage's "method" / "How Assay works"
- * cards — border tint + glow shadow on hover, plus a top bar that wipes
- * in — cycled per card so neighbours never repeat the same accent. */
 type Accent = 'cobalt' | 'up' | 'gold';
+
 const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
+
 const ACCENT: Record<
   Accent,
   { pill: string; border: string; glow: string; bar: string }
@@ -35,7 +34,11 @@ const ACCENT: Record<
   },
 };
 
-const PROCESS_STEPS: { icon: PageIconKind; title: string; blurb: string }[] = [
+const PROCESS_STEPS: {
+  icon: PageIconKind;
+  title: string;
+  blurb: string;
+}[] = [
   {
     icon: 'send',
     title: 'Submit',
@@ -54,28 +57,39 @@ const PROCESS_STEPS: { icon: PageIconKind; title: string; blurb: string }[] = [
 ];
 
 const CATEGORY_OPTIONS = [
-  { value: 'new_launchpad', label: 'New Launchpad (not yet tracked)' },
+  {
+    value: 'new_launchpad',
+    label: 'New Launchpad (not yet tracked)',
+  },
   {
     value: 'team_verification',
     label: 'Team Verification (doxxed / pseudonymous)',
   },
-  { value: 'website_docs', label: 'Website / Documentation Link' },
-  { value: 'audit', label: 'Audit Report Link' },
-  { value: 'deployer_address', label: 'Deployer / Factory Contract Address' },
-  { value: 'note', label: 'General Correction or Note' },
+  {
+    value: 'website_docs',
+    label: 'Website / Documentation Link',
+  },
+  {
+    value: 'audit',
+    label: 'Audit Report Link',
+  },
+  {
+    value: 'deployer_address',
+    label: 'Deployer / Factory Contract Address',
+  },
+  {
+    value: 'note',
+    label: 'General Correction or Note',
+  },
 ];
 
-// Categories that map onto one specific, already-tracked field on the
-// launchpad row (see lib/supabase/queries.ts's LaunchpadRow) rather than
-// being a free-text note about it. For these, the form shows a dedicated
-// input — pre-labelled with the launchpad's current value — instead of
-// asking the submitter to describe the change in prose. Kept in the same
-// "Factory: X; Website: Y" shape app/api/admin/moderation/route.ts's
-// parseNewLaunchpadValue() already parses for new_launchpad, so the same
-// parser lifts these updates too once approved.
 const FIELD_UPDATE_CONFIG: Record<
   string,
-  { label: string; placeholder: string; prefixKey: 'Website' | 'Factory' }
+  {
+    label: string;
+    placeholder: string;
+    prefixKey: 'Website' | 'Factory';
+  }
 > = {
   website_docs: {
     label: 'New Website URL',
@@ -106,15 +120,13 @@ export default function SubmitPage() {
   const [launchpadsError, setLaunchpadsError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
-  // Starts empty rather than defaulting to the first mock entry — the
-  // real list only exists once /api/launchpads resolves (see the
-  // effect below), and there's no "first" launchpad to assume before then.
+
   const [launchpad, setLaunchpad] = useState<string>('');
   const [newLaunchpadName, setNewLaunchpadName] = useState('');
   const [factoryAddress, setFactoryAddress] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0].value);
-  const [fieldValue, setFieldValue] = useState(''); // structured update, see FIELD_UPDATE_CONFIG
+  const [fieldValue, setFieldValue] = useState('');
   const [context, setContext] = useState('');
   const [contact, setContact] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -122,21 +134,24 @@ export default function SubmitPage() {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
         const res = await fetch('/api/launchpads');
         const body = await res.json().catch(() => null);
+
         if (!res.ok) {
           throw new Error(
             body?.error?.message ?? `Request failed (${res.status})`,
           );
         }
+
         if (cancelled) return;
+
         const list: LaunchpadOption[] = body.launchpads ?? [];
+
         setLaunchpads(list);
-        // Only claim the first real launchpad as the default when the
-        // selector hasn't been touched yet — never stomp a choice the
-        // person already made while this was loading.
+
         setLaunchpad(
           (current) => current || list[0]?.slug || NEW_LAUNCHPAD_VALUE,
         );
@@ -145,74 +160,62 @@ export default function SubmitPage() {
           setLaunchpadsError(
             err instanceof Error ? err.message : 'Failed to load launchpads.',
           );
+
           setLaunchpad((current) => current || NEW_LAUNCHPAD_VALUE);
         }
       } finally {
         if (!cancelled) setLaunchpadsLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
   const isNewLaunchpad = launchpad === NEW_LAUNCHPAD_VALUE;
+
   const launchpadLabel = isNewLaunchpad ? newLaunchpadName || null : launchpad;
+
   const selectedLaunchpad = useMemo(
     () => launchpads.find((lp) => lp.slug === launchpad) ?? null,
     [launchpads, launchpad],
   );
+
   const fieldUpdate = !isNewLaunchpad
     ? FIELD_UPDATE_CONFIG[category]
     : undefined;
+
   const currentFieldValue = !fieldUpdate
     ? null
     : fieldUpdate.prefixKey === 'Website'
       ? (selectedLaunchpad?.websiteUrl ?? null)
       : (selectedLaunchpad?.deployerAddresses[0] ?? null);
 
-  // Category options depend on which "Launchpad" is selected above —
-  // "New Launchpad (not yet tracked)" only makes sense together with
-  // "+ New launchpad" up there, and MUST be paired with it. Without
-  // this, picking an existing launchpad while the category defaulted
-  // to "new_launchpad" produced a submission with field: 'new_launchpad'
-  // but no Factory Contract Address (that input only renders when
-  // isNewLaunchpad is true) — app/api/admin/moderation/route.ts's
-  // onboardApprovedLaunchpad() only checks submission.field, so it
-  // happily inserted a launchpad with deployer_addresses: [], which is
-  // exactly the bug that left noxa-fun/pools-trade stuck at
-  // sample_size 0 / a 422 on backfill. Decoupling was the actual root
-  // cause, not the parsing or the required-field check.
   const categoryOptions = isNewLaunchpad
     ? CATEGORY_OPTIONS.filter((c) => c.value === 'new_launchpad')
     : CATEGORY_OPTIONS.filter((c) => c.value !== 'new_launchpad');
 
-  // Keep `category` valid whenever `launchpad` flips between "+ New"
-  // and an existing entry, instead of leaving a stale selection that
-  // no longer belongs on the visible list.
   useEffect(() => {
     if (!categoryOptions.some((c) => c.value === category)) {
       setCategory(categoryOptions[0].value);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNewLaunchpad]);
 
-  // Reset the structured field value whenever the category or the
-  // selected launchpad changes, so a leftover website URL typed for one
-  // launchpad never gets silently submitted against a different one.
   useEffect(() => {
     setFieldValue('');
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, launchpad]);
 
-  // What actually gets written to the `value` column. For a structured
-  // field update this prepends "Website: X;" / "Factory: X;" — the same
-  // shape parseNewLaunchpadValue() already looks for — so an admin
-  // approval can apply it directly instead of re-typing it by hand.
   const composedValue = fieldUpdate
     ? `${fieldUpdate.prefixKey}: ${fieldValue};${context ? ` ${context}` : ''}`
     : isNewLaunchpad
-      ? `Factory: ${factoryAddress};${websiteUrl ? ` Website: ${websiteUrl};` : ''} ${context}`
+      ? `Factory: ${factoryAddress};${
+          websiteUrl ? ` Website: ${websiteUrl};` : ''
+        } ${context}`
       : context;
 
   const payload = {
@@ -233,46 +236,47 @@ export default function SubmitPage() {
     (isNewLaunchpad ? Boolean(factoryAddress) : true) &&
     (fieldUpdate ? Boolean(fieldValue) : Boolean(context));
 
-  // Required inputs that are still empty, shown above the submit button
-  // so the person knows exactly what's blocking "Submit".
   const missingFields: string[] = [];
+
   if (!launchpadLabel) {
     missingFields.push(isNewLaunchpad ? 'Launchpad name' : 'Launchpad');
   }
+
   if (isNewLaunchpad && !factoryAddress) {
     missingFields.push('Factory Contract Address');
   }
-  if (fieldUpdate && !fieldValue) missingFields.push(fieldUpdate.label);
-  if (!fieldUpdate && !context) missingFields.push('Description');
+
+  if (fieldUpdate && !fieldValue) {
+    missingFields.push(fieldUpdate.label);
+  }
+
+  if (!fieldUpdate && !context) {
+    missingFields.push('Description');
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
     if (!canSubmit) return;
+
     setStatus('submitting');
     setErrorMsg(null);
 
-    // `category` doubles as the submission's `field` column — the
-    // category IS the field being submitted about.
     const field = category;
     const slug = isNewLaunchpad ? newLaunchpadName : launchpad;
     const value = composedValue;
 
-    // Writes directly to launchpad_submissions. RLS (see
-    // supabase/migrations/0001_init.sql) allows a public INSERT only
-    // with status = 'pending' — there is no policy letting this client
-    // read it back, update it, or touch launchpads/scores. A human
-    // moderates from here, per section 9 of the brief.
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      // No Supabase project configured yet — demo fallback so the form
-      // is still explorable before the backend is wired up.
       setTimeout(() => {
         setSubmittedAt(new Date().toISOString());
         setStatus('done');
       }, 700);
+
       return;
     }
 
     const supabase = createClient();
+
     const { error } = await supabase.from('launchpad_submissions').insert({
       launchpad_slug: slug,
       field,
@@ -285,6 +289,7 @@ export default function SubmitPage() {
       setStatus('idle');
       return;
     }
+
     setSubmittedAt(new Date().toISOString());
     setStatus('done');
   }
@@ -304,60 +309,74 @@ export default function SubmitPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
-        <p className="mb-3 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
-          <PageIcon kind="send" size={13} />
-          Get listed
+        <p className="mb-3 inline-block rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
+          Public submission
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+
+        <h1 className="font-mono text-3xl font-semibold tracking-tight text-ink">
           Add, claim, or correct a launchpad
         </h1>
-        <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
-          Submissions land as{' '}
-          <span className="font-mono text-[13px]">pending</span> and are
-          reviewed by a human before anything becomes public. This never affects
-          a launchpad's score — independence doesn't bend for the launchpad that
-          submitted the correction, per the deterministic score formula.
+
+        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-ink-soft">
+          Submissions are published only after human review. A correction can
+          update launchpad information, but it can never influence the
+          deterministic score itself.
         </p>
       </Reveal>
 
-      {/* Process strip — staggered entrance, level grid (aligned with Rankings' strip) */}
-      <div className="card-surface mt-7 grid gap-3 sm:grid-cols-3">
-        {PROCESS_STEPS.map((s, i) => {
+      <div className="mt-10 grid gap-6 md:grid-cols-3">
+        {PROCESS_STEPS.map((step, i) => {
           const accent = ACCENT[ACCENT_ORDER[i % ACCENT_ORDER.length]];
+
           return (
-            <Reveal key={s.title} delay={0.05 + i * 0.06}>
-              <div
-                className={`group relative flex items-start gap-3 overflow-hidden rounded-xl border border-line bg-card p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+            <Reveal key={step.title} delay={0.05 + i * 0.06}>
+              <section
+                className={`dark-card group relative h-full overflow-hidden rounded-2xl border bg-[#141413] p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
               >
                 <span
                   className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                 />
-                <span
-                  className={`icon-chip grid h-8 w-8 shrink-0 place-items-center rounded-lg font-mono text-[11px] font-semibold transition-colors duration-300 ${accent.pill}`}
-                >
-                  <PageIcon kind={s.icon} size={15} />
-                </span>
-                <div>
-                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
-                    <span className="font-mono text-[10.5px] text-faint">
-                      0{i + 1}
-                    </span>
-                    {s.title}
-                  </div>
-                  <p className="mt-0.5 text-[11.5px] leading-snug text-muted">
-                    {s.blurb}
-                  </p>
+
+                <div className="mb-3 flex items-center gap-3">
+                  <span
+                    className={`pipeline-badge pipeline-badge-${ACCENT_ORDER[i % ACCENT_ORDER.length]} grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110`}
+                  >
+                    <PageIcon kind={step.icon} size={16} />
+                  </span>
+
+                  <h2 className="font-mono text-base font-bold text-[#f3f1ea]">
+                    {step.title}
+                  </h2>
                 </div>
-              </div>
+
+                <p className="text-[13px] leading-relaxed text-[#b5b2a6]">
+                  {step.blurb}
+                </p>
+              </section>
             </Reveal>
           );
         })}
       </div>
 
-      <div className="card-surface mt-8 grid gap-6 lg:grid-cols-2">
-        {/* Left — the form */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Reveal delay={0.06}>
-          <div className="card-hover rounded-2xl border border-line bg-card p-6 sm:p-8">
+          <section
+            className={`dark-card group relative h-full overflow-hidden rounded-2xl border bg-[#141413] p-6 transition-all duration-300 ease-out hover:-translate-y-1.5 ${ACCENT.cobalt.border} ${ACCENT.cobalt.glow} sm:p-8`}
+          >
+            <span
+              className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
+            />
+
+            <div className="mb-6">
+              <h2 className="font-mono text-lg font-bold text-[#f3f1ea]">
+                Submission details
+              </h2>
+
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#6e6c63]">
+                Provide the information you want Assay to verify.
+              </p>
+            </div>
+
             <AnimatePresence mode="wait">
               {status === 'done' ? (
                 <motion.div
@@ -365,25 +384,29 @@ export default function SubmitPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="py-6 text-center"
+                  className="py-8 text-center"
                 >
-                  <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-up-soft text-up">
+                  <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full bg-up-soft text-up">
                     ✓
                   </div>
-                  <p className="text-sm font-medium text-ink">
+
+                  <p className="font-mono text-sm font-semibold text-[#f3f1ea]">
                     Submission received
                   </p>
-                  <p className="mt-1 text-[13px] text-muted">
-                    It's in the moderation queue now. You'll see it reflected on
-                    the launchpad's page once verified.
+
+                  <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#b5b2a6]">
+                    It&apos;s in the moderation queue now. You&apos;ll see it
+                    reflected on the launchpad&apos;s page once verified.
                   </p>
-                  <p className="mx-auto mt-3 max-w-sm rounded-lg border border-line bg-paper px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
+
+                  <p className="mx-auto mt-4 max-w-sm rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-[12px] leading-relaxed text-[#6e6c63]">
                     Please allow up to 1×24 hours for the review and for your
                     data to be added.
                   </p>
+
                   <button
                     onClick={reset}
-                    className="mt-5 text-[13px] text-cobalt hover:underline"
+                    className="mt-5 font-mono text-[12px] text-cobalt hover:underline"
                   >
                     Submit another
                   </button>
@@ -397,93 +420,82 @@ export default function SubmitPage() {
                   onSubmit={handleSubmit}
                   className="space-y-5"
                 >
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                      Launchpad
-                    </label>
+                  <DarkField label="Launchpad">
                     <select
                       value={launchpad}
                       onChange={(e) => setLaunchpad(e.target.value)}
                       disabled={launchpadsLoading}
-                      className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt disabled:opacity-60"
+                      className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors focus-visible:border-cobalt"
                     >
                       <option value={NEW_LAUNCHPAD_VALUE}>
                         + New launchpad (not yet tracked)
                       </option>
+
                       {launchpadsLoading && (
                         <option>Loading launchpads…</option>
                       )}
+
                       {launchpads.map((lp) => (
                         <option key={lp.slug} value={lp.slug}>
                           {lp.name}
                         </option>
                       ))}
                     </select>
+
                     {launchpadsError && (
                       <p className="mt-1.5 text-[11.5px] text-down">
-                        Couldn't load the live launchpad list ({launchpadsError}
-                        ) — you can still submit a new launchpad below.
+                        Couldn&apos;t load the live launchpad list (
+                        {launchpadsError}) — you can still submit a new
+                        launchpad below.
                       </p>
                     )}
-                  </div>
+                  </DarkField>
 
                   {isNewLaunchpad && (
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                        Launchpad name
-                      </label>
+                    <DarkField label="Launchpad name">
                       <input
                         required
                         value={newLaunchpadName}
                         onChange={(e) => setNewLaunchpadName(e.target.value)}
                         placeholder="e.g. Meridian Launch"
-                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                        className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                       />
-                    </div>
+                    </DarkField>
                   )}
 
                   {isNewLaunchpad && (
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                        Factory Contract Address
-                      </label>
+                    <DarkField label="Factory Contract Address">
                       <input
                         required
                         value={factoryAddress}
                         onChange={(e) => setFactoryAddress(e.target.value)}
                         placeholder="0x…"
-                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 font-mono text-sm text-ink outline-none focus-visible:border-cobalt"
+                        className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 font-mono text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                       />
-                      <p className="mt-1.5 text-[11.5px] text-faint">
+
+                      <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#6e6c63]">
                         Required for a new launchpad — this is what lets Assay
-                        discover and count its token launches. Without it, the
-                        listing gets added but can never be scored.
+                        discover and count its token launches.
                       </p>
-                    </div>
+                    </DarkField>
                   )}
 
                   {isNewLaunchpad && (
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                        Website (optional)
-                      </label>
+                    <DarkField label="Website (optional)">
                       <input
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
                         placeholder="https://…"
-                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                        className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                       />
-                    </div>
+                    </DarkField>
                   )}
 
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                      Information Category
-                    </label>
+                  <DarkField label="Information Category">
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                      className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors focus-visible:border-cobalt"
                     >
                       {categoryOptions.map((c) => (
                         <option key={c.value} value={c.value}>
@@ -491,28 +503,24 @@ export default function SubmitPage() {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </DarkField>
 
-                  {/* Structured update — only for categories that map onto one
-                      specific tracked field (see FIELD_UPDATE_CONFIG above). */}
                   {fieldUpdate && (
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                        {fieldUpdate.label}
-                      </label>
+                    <DarkField label={fieldUpdate.label}>
                       <input
                         required
                         value={fieldValue}
                         onChange={(e) => setFieldValue(e.target.value)}
                         placeholder={fieldUpdate.placeholder}
-                        className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 font-mono text-sm text-ink outline-none focus-visible:border-cobalt"
+                        className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 font-mono text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                       />
-                      <p className="mt-1.5 text-[11.5px] text-faint">
+
+                      <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#6e6c63]">
                         {selectedLaunchpad ? (
                           currentFieldValue ? (
                             <>
                               Currently on file:{' '}
-                              <span className="font-mono">
+                              <span className="font-mono text-[#b5b2a6]">
                                 {currentFieldValue}
                               </span>
                             </>
@@ -523,59 +531,60 @@ export default function SubmitPage() {
                           'Select a launchpad above to see its current value.'
                         )}
                       </p>
-                    </div>
+                    </DarkField>
                   )}
 
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                      {fieldUpdate
+                  <DarkField
+                    label={
+                      fieldUpdate
                         ? 'Additional Description (optional)'
-                        : 'Description'}
-                    </label>
+                        : 'Description'
+                    }
+                  >
                     <textarea
                       required={!fieldUpdate}
                       rows={4}
                       value={context}
                       onChange={(e) => setContext(e.target.value)}
                       placeholder="Describe the launchpad, or add any supporting links here…"
-                      className="w-full resize-none rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                      className="w-full resize-none rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                     />
+
                     {category !== 'note' && (
-                      <p className="mt-1.5 text-[11.5px] text-faint">
+                      <p className="mt-1.5 text-[11.5px] leading-relaxed text-[#6e6c63]">
                         URLs are validated before Assay ever fetches them: HTTPS
                         only, private/reserved IP ranges rejected
                         post-DNS-resolution, redirects re-validated with a hard
                         cap.
                       </p>
                     )}
-                  </div>
+                  </DarkField>
 
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-ink">
-                      Contact Wallet or Twitter Handle
-                    </label>
+                  <DarkField label="Contact Wallet or Twitter Handle">
                     <input
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
                       placeholder="0x… or @handle"
-                      className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-cobalt"
+                      className="w-full rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-sm text-[#f3f1ea] outline-none transition-colors placeholder:text-[#6e6c63] focus-visible:border-cobalt"
                     />
-                    <p className="mt-1.5 text-[11.5px] text-faint">
+
+                    <p className="mt-1.5 text-[11.5px] text-[#6e6c63]">
                       Used solely if verification team requires clarification.
                     </p>
-                  </div>
+                  </DarkField>
 
                   {missingFields.length > 0 && (
                     <div
                       role="status"
-                      className="rounded-lg border border-line bg-paper px-3 py-2.5 text-[12.5px] text-ink-soft"
+                      className="rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-[12px] text-[#b5b2a6]"
                     >
-                      <p className="font-semibold text-ink">
+                      <p className="font-semibold text-[#f3f1ea]">
                         Still required before you can submit:
                       </p>
+
                       <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                        {missingFields.map((f) => (
-                          <li key={f}>{f}</li>
+                        {missingFields.map((field) => (
+                          <li key={field}>{field}</li>
                         ))}
                       </ul>
                     </div>
@@ -590,7 +599,7 @@ export default function SubmitPage() {
                   <button
                     type="submit"
                     disabled={status === 'submitting' || !canSubmit}
-                    className="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="w-full rounded-lg bg-[#e8e402] py-2.5 font-mono text-[12px] font-bold uppercase tracking-[0.08em] text-[#141413] transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:opacity-40"
                   >
                     {status === 'submitting'
                       ? 'Submitting…'
@@ -599,48 +608,91 @@ export default function SubmitPage() {
                 </motion.form>
               )}
             </AnimatePresence>
-          </div>
+          </section>
         </Reveal>
 
-        {/* Right — live request payload preview */}
         <Reveal delay={0.12}>
-          <div className="card-hover h-full rounded-2xl border border-line bg-panel p-6 font-mono text-[12.5px] leading-relaxed sm:p-8">
-            <div className="mb-4 flex items-center gap-2 text-ink-soft">
-              <span className="h-1.5 w-1.5 rounded-full bg-up" />
-              <span>POST /submissions</span>
+          <section
+            className={`dark-card group relative h-full overflow-hidden rounded-2xl border bg-[#141413] p-6 font-mono transition-all duration-300 ease-out hover:-translate-y-1.5 ${ACCENT.cobalt.border} ${ACCENT.cobalt.glow} sm:p-8`}
+          >
+            <span
+              className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
+            />
+
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[#b5b2a6]">
+                <span className="h-1.5 w-1.5 rounded-full bg-up" />
+                <span className="text-[12px]">POST /submissions</span>
+              </div>
+
+              <span className="rounded border border-[#302f2a] bg-[#1c1b18] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[#6e6c63]">
+                preview
+              </span>
             </div>
 
-            {hasAnyInput ? (
-              <pre className="whitespace-pre-wrap break-words text-ink-soft">
-                {JSON.stringify(payload, null, 2)}
-              </pre>
-            ) : (
-              <p className="text-faint">
-                <span className="block">
-                  // fill out form on the left, then click submit
-                </span>
-                <span className="block">
-                  // to inspect verified submission payload
-                </span>
-              </p>
-            )}
+            <div className="overflow-hidden rounded-xl border border-[#302f2a] bg-[#0f0f0d]">
+              {hasAnyInput ? (
+                <pre className="min-h-[320px] whitespace-pre-wrap break-words p-5 text-[12px] leading-relaxed text-[#b5b2a6]">
+                  {JSON.stringify(payload, null, 2)}
+                </pre>
+              ) : (
+                <div className="min-h-[320px] p-5 text-[12px] leading-relaxed text-[#6e6c63]">
+                  <span className="block">// fill out form on the left</span>
+
+                  <span className="block">
+                    // to inspect the submission payload
+                  </span>
+
+                  <span className="mt-4 block h-px w-8 bg-[#302f2a]" />
+                </div>
+              )}
+            </div>
 
             {status === 'done' && (
-              <p className="mt-4 text-up">
+              <p className="mt-4 text-[12px] text-up">
                 // 201 Created — queued for peer review
               </p>
             )}
-          </div>
+
+            <div className="mt-6 border-t border-[#302f2a] pt-5">
+              <p className="text-[11.5px] leading-relaxed text-[#6e6c63]">
+                The preview mirrors the payload sent to the submission endpoint.
+                Approval happens separately through human moderation.
+              </p>
+            </div>
+          </section>
         </Reveal>
       </div>
 
-      <p className="mt-6 text-[12.5px] text-muted">
-        Initial status of every submission:{' '}
-        <span className="card-surface rounded border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">
-          PENDING
-        </span>{' '}
-        — kept private until verified by peer review.
-      </p>
+      <Reveal delay={0.05} className="mt-8">
+        <div className="flex items-start gap-3 rounded-xl border border-[#302f2a] bg-[#141413] px-4 py-3">
+          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cobalt" />
+
+          <p className="text-[12px] leading-relaxed text-[#6e6c63]">
+            Initial status of every submission:{' '}
+            <span className="font-mono text-[#b5b2a6]">PENDING</span> — kept
+            private until verified by peer review.
+          </p>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+function DarkField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-mono text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#b5b2a6]">
+        {label}
+      </label>
+
+      {children}
     </div>
   );
 }
