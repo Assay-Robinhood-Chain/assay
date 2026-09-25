@@ -16,7 +16,7 @@ import { starsFromScore } from './scoring';
 
 function finalScoreFrom(dimensions: DimensionScores): number {
   const raw = (Object.keys(dimensions) as (keyof DimensionScores)[]).reduce(
-    (sum, k) => sum + dimensions[k] * DIMENSION_WEIGHTS[k],
+    (sum, k) => sum + (dimensions[k] ?? 0) * DIMENSION_WEIGHTS[k],
     0,
   );
   return Math.max(0, Math.min(100, Math.round(raw * 10) / 10));

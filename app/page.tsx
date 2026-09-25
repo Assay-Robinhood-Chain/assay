@@ -8,7 +8,8 @@ import { getLaunchpads } from '@/lib/supabase/queries';
 import {
   TARGET_CHAIN,
   MIN_BACKFILL_FULL_THRESHOLD,
-  MAX_BACKFILL_SAMPLE,
+  BACKFILL_SAMPLE_RATIO,
+  BACKFILL_SAMPLE_CAP,
   DIMENSION_LABELS,
   DIMENSION_DESCRIPTIONS,
   DIMENSION_WEIGHTS,
@@ -49,6 +50,12 @@ const ACCENT: Record<
     glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
     bar: 'bg-gold',
   },
+};
+
+const ENGINE_ACCENT: Record<'telemetry' | 'contract' | 'discovery', string> = {
+  telemetry: 'cobalt',
+  contract: 'gold',
+  discovery: 'up',
 };
 
 const ENGINES: {
@@ -92,7 +99,7 @@ const STEPS = [
   {
     n: '02',
     title: 'Its tokens get discovered',
-    desc: `A one-time backfill pulls in every launch under ${MIN_BACKFILL_FULL_THRESHOLD}, or the most recent 50% capped at ${MAX_BACKFILL_SAMPLE} for larger launchpads — see the sampling rule on the Coverage page.`,
+    desc: `A one-time backfill pulls in every launch under ${MIN_BACKFILL_FULL_THRESHOLD}, or the most recent ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total for larger launchpads, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()}. See the sampling rule on the Coverage page.`,
   },
   {
     n: '03',
@@ -117,10 +124,10 @@ export default async function HomePage() {
       <section className="border-t border-line bg-panel/40">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
           <Reveal>
-            <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+            <p className="mb-3 inline-block rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
               The method
             </p>
-            <h2 className="max-w-2xl text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+            <h2 className="max-w-2xl text-xl font-semibold font-mono tracking-tight text-ink sm:text-2xl">
               A launchpad's homepage will tell you it's audited. None of that is
               evidence.
             </h2>
@@ -138,21 +145,21 @@ export default async function HomePage() {
               return (
                 <Reveal key={key} delay={i * 0.05}>
                   <div
-                    className={`group relative flex h-full flex-col justify-between overflow-hidden rounded-xl border border-line bg-card p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                    className={`dark-card group relative flex h-full flex-col justify-between overflow-hidden rounded-xl border bg-[#141413] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
                   >
                     <span
                       className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                     />
                     <div>
-                      <span
-                        className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <div className="mt-1.5 text-sm font-medium text-ink">
-                        {DIMENSION_LABELS[key]}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] font-semibold text-[#6e6c63]">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className="text-sm font-bold text-[#f3f1ea]">
+                          {DIMENSION_LABELS[key]}
+                        </span>
                       </div>
-                      <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+                      <p className="mt-1.5 text-[12px] leading-relaxed text-[#b5b2a6]">
                         {DIMENSION_DESCRIPTIONS[key]}
                       </p>
                     </div>
@@ -172,7 +179,9 @@ export default async function HomePage() {
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <Reveal>
-          <h2 className="text-lg font-semibold text-ink">How Assay works</h2>
+          <h2 className="text-lg font-semibold font-mono text-ink">
+            How Assay works
+          </h2>
           <p className="mt-1 max-w-xl text-[13.5px] text-muted">
             The same pipeline runs for every launchpad on {TARGET_CHAIN} —
             nothing is scored by hand, and nothing skips a step.
@@ -186,27 +195,27 @@ export default async function HomePage() {
             return (
               <Reveal key={s.n} delay={i * 0.06}>
                 <div
-                  className={`group relative h-full overflow-hidden rounded-xl border border-line bg-card p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                  className={`dark-card group relative h-full overflow-hidden rounded-xl border bg-[#141413] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
                 >
                   <span
                     className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                   />
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`font-mono text-[11px] transition-colors duration-300 ${accent.text}`}
-                    >
-                      {s.n}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] font-semibold text-[#6e6c63]">
+                        {s.n}
+                      </span>
+                      <span className="text-sm font-bold text-[#f3f1ea]">
+                        {s.title}
+                      </span>
+                    </div>
                     {!isLast && (
-                      <span className="font-mono text-[11px] text-faint opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <span className="font-mono text-[11px] text-[#6e6c63] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                         next →
                       </span>
                     )}
                   </div>
-                  <div className="mt-1.5 text-sm font-medium text-ink">
-                    {s.title}
-                  </div>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#b5b2a6]">
                     {s.desc}
                   </p>
                 </div>
@@ -218,7 +227,7 @@ export default async function HomePage() {
         <Reveal delay={0.2} className="mt-4">
           <Link
             href="/coverage"
-            className="text-[13px] text-cobalt hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1.5 text-[12.5px] font-bold text-[#141413] transition-transform duration-200 hover:-translate-y-0.5"
           >
             See exactly what's indexed right now, live →
           </Link>
@@ -228,10 +237,10 @@ export default async function HomePage() {
       {/* Star legend */}
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <Reveal>
-          <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+          <p className="mb-3 inline-block rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
             The dossier
           </p>
-          <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+          <h2 className="text-xl font-semibold font-mono tracking-tight text-ink sm:text-2xl">
             One to three stars. Earned, never sold.
           </h2>
           <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-soft">
@@ -271,7 +280,7 @@ export default async function HomePage() {
         <Reveal delay={0.2} className="mt-4">
           <Link
             href="/methodology"
-            className="text-[13px] text-cobalt hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1.5 text-[12.5px] font-bold text-[#141413] transition-transform duration-200 hover:-translate-y-0.5"
           >
             Read the full scoring methodology →
           </Link>
@@ -293,7 +302,7 @@ export default async function HomePage() {
             </Reveal>
             <Link
               href="/rankings"
-              className="shrink-0 text-[13px] text-cobalt hover:underline"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1.5 text-[12.5px] font-bold text-[#141413] transition-transform duration-200 hover:-translate-y-0.5"
             >
               Full rankings →
             </Link>
@@ -302,17 +311,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Three engines — dark accent section */}
-      <section className="border-y border-[#282824] bg-[#111210] py-14 sm:py-20">
+      {/* Three engines */}
+      <section className="border-y border-line bg-panel/40 py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
           <Reveal>
-            <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.14em] text-[#A3A29B]">
+            <p className="mb-3 inline-block rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
               Adversarial on-chain scrutiny
             </p>
-            <h2 className="max-w-xl text-xl font-semibold tracking-tight text-white sm:text-2xl">
+            <h2 className="max-w-xl text-xl font-semibold font-mono tracking-tight text-ink sm:text-2xl">
               Three engines. Zero courtesy.
             </h2>
-            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-[#B5B2A6]">
+            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-soft">
               We don't flatter launchpads into looking safe. Every score is
               synthesized from three independent sources — never from what a
               launchpad says about itself.
@@ -322,18 +331,22 @@ export default async function HomePage() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {ENGINES.map((e, i) => (
               <Reveal key={e.name} delay={i * 0.07}>
-                <div className="group relative h-full overflow-hidden rounded-xl border border-[#282824] bg-[#161614] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[#7a9cff]/40 hover:shadow-[0_16px_36px_-18px_rgba(122,156,255,0.35)]">
+                <div className="dark-card group relative h-full overflow-hidden rounded-xl border bg-[#141413] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[#7a9cff]/40 hover:shadow-[0_16px_36px_-18px_rgba(122,156,255,0.35)]">
                   <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl bg-[#7a9cff] transition-transform duration-300 group-hover:scale-x-100" />
-                  <span className="inline-block rounded-full border border-[#302f2a] px-2.5 py-1 font-mono text-[10.5px] text-[#A3A29B]">
+                  <span className="inline-block rounded-full border border-[#302f2a] px-2.5 py-1 font-mono text-[10.5px] text-[#b5b2a6]">
                     {e.tag}
                   </span>
                   <div className="mt-3 flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#302f2a] bg-[#1b1b18] text-[#7a9cff] transition-transform duration-300 group-hover:scale-110">
+                    <span
+                      className={`pipeline-badge pipeline-badge-${ENGINE_ACCENT[e.icon]} grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110`}
+                    >
                       <SourceIcon kind={e.icon} />
                     </span>
-                    <h3 className="text-sm font-medium text-white">{e.name}</h3>
+                    <h3 className="text-sm font-bold text-[#f3f1ea]">
+                      {e.name}
+                    </h3>
                   </div>
-                  <p className="mt-2 text-[12.5px] leading-relaxed text-[#B5B2A6]">
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-[#b5b2a6]">
                     {e.desc}
                   </p>
                 </div>
@@ -363,9 +376,9 @@ export default async function HomePage() {
         </Reveal>
 
         <Reveal delay={0.1} className="mt-14 text-center">
-          <h2 className="mx-auto max-w-xl text-balance text-lg font-semibold leading-snug tracking-tight text-ink sm:text-xl">
+          <h2 className="mx-auto max-w-xl text-balance text-lg font-semibold font-mono leading-snug tracking-tight text-ink sm:text-xl">
             Somewhere on this chain, a launchpad is doing exactly what a rug
-            does — right now, in real time, un-flagged.
+            does right now, in real time, un-flagged.
           </h2>
           <p className="mx-auto mt-2 max-w-md text-[13px] text-muted">
             Assay's job is to catch it on the next hourly pass, not after the
@@ -373,7 +386,7 @@ export default async function HomePage() {
           </p>
           <Link
             href="/rankings"
-            className="mt-5 inline-block text-[13px] font-medium text-cobalt hover:underline"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1.5 text-[12.5px] font-bold text-[#141413] transition-transform duration-200 hover:-translate-y-0.5"
           >
             See the current directory →
           </Link>
@@ -381,13 +394,13 @@ export default async function HomePage() {
 
         <Reveal
           delay={0.15}
-          className="mt-10 flex flex-col items-start gap-3 rounded-2xl border border-line bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+          className="dark-card mt-10 flex flex-col items-start gap-3 rounded-2xl border bg-[#141413] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
         >
           <div>
-            <div className="text-base font-medium text-ink">
+            <div className="text-base font-bold text-[#f3f1ea]">
               Run a launchpad on {TARGET_CHAIN}?
             </div>
-            <p className="mt-1 text-[13px] text-muted">
+            <p className="mt-1 text-[13px] text-[#b5b2a6]">
               Get listed, or submit a correction to an existing entry — reviewed
               by a human, never auto-published.
             </p>
@@ -416,14 +429,16 @@ function StarLegendCard({
   desc: string;
 }) {
   return (
-    <div className="card-hover h-full rounded-xl border border-line bg-card p-5">
+    <div className="dark-card h-full rounded-xl border bg-[#141413] p-5">
       <span className="font-mono text-sm text-gold">
         {'★'.repeat(stars)}
         {'☆'.repeat(3 - stars)}
       </span>
-      <div className="mt-1.5 text-sm font-medium text-ink">{title}</div>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{desc}</p>
-      <span className="mt-3 inline-block font-mono text-[11px] text-faint">
+      <div className="mt-1.5 text-sm font-bold text-[#f3f1ea]">{title}</div>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#b5b2a6]">
+        {desc}
+      </p>
+      <span className="mt-3 inline-block font-mono text-[11px] text-[#6e6c63]">
         score {range}
       </span>
     </div>
@@ -432,9 +447,11 @@ function StarLegendCard({
 
 function TrustItem({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="card-hover rounded-xl border border-line-soft bg-panel p-5">
-      <div className="text-sm font-medium text-ink">{title}</div>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{desc}</p>
+    <div className="dark-card rounded-xl border bg-[#141413] p-5">
+      <div className="text-sm font-bold text-[#f3f1ea]">{title}</div>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#b5b2a6]">
+        {desc}
+      </p>
     </div>
   );
 }

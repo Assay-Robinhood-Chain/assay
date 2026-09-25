@@ -46,13 +46,13 @@ export default function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="mb-4 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-faint"
+            className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]"
           >
-            <span className="text-gold">—</span> Robinhood Chain · On-chain
-            measurement
+            — Robinhood Chain · On-chain measurement
           </motion.p>
-
-          <RevealHeadline text="We don't cover launchpads. We audit them." />
+          <div className="font-mono">
+            <RevealHeadline text="We don't cover launchpads. We audit them." />
+          </div>
 
           <motion.p
             initial={{ opacity: 0, y: 8 }}

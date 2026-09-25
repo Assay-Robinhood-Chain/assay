@@ -1,37 +1,48 @@
-import Link from "next/link";
-import { CoverageRow, ConfidenceFloor } from "@/lib/coverage";
-import { formatDate } from "@/lib/scoring";
-import DiscoverySourceBadge from "./DiscoverySourceBadge";
+import Link from 'next/link';
+import { CoverageRow, ConfidenceFloor } from '@/lib/coverage';
+import { formatDate } from '@/lib/scoring';
+import DiscoverySourceBadge from './DiscoverySourceBadge';
 
 const FLOOR_CLASS: Record<ConfidenceFloor, string> = {
-  high: "bg-up-soft text-up",
-  med: "bg-gold-soft text-gold",
-  low: "bg-down-soft text-down",
+  high: 'bg-up-soft text-up',
+  med: 'bg-gold-soft text-gold',
+  low: 'bg-down-soft text-down',
 };
 
 export default function CoverageTable({ rows }: { rows: CoverageRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-line">
+    <div className="coverage-dark-surface overflow-x-auto rounded-xl border border-line bg-card">
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-line bg-panel">
-            {["Launchpad", "Status", "Discovery source", "Sample / upstream total", "Confidence floor", "Last ingested"].map(
-              (h) => (
-                <th
-                  key={h}
-                  className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-faint"
-                >
-                  {h}
-                </th>
-              )
-            )}
+          <tr className="coverage-thead border-b border-line">
+            {[
+              'Launchpad',
+              'Status',
+              'Discovery source',
+              'Sample / upstream total',
+              'Confidence floor',
+              'Last ingested',
+            ].map((h) => (
+              <th
+                key={h}
+                className="coverage-th-text px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide"
+              >
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {rows.map(({ launchpad: lp, confidenceFloor }) => (
-            <tr key={lp.id} className="border-b border-line-soft last:border-0 hover:bg-panel/50">
+            <tr
+              key={lp.id}
+              className="border-b border-line-soft last:border-0 hover:bg-panel/50"
+            >
               <td className="px-4 py-3">
-                <Link href={`/launchpad/${lp.slug}`} className="font-medium text-ink hover:text-cobalt">
+                <Link
+                  href={`/launchpad/${lp.slug}`}
+                  className="font-medium text-ink hover:text-cobalt"
+                >
                   {lp.name}
                 </Link>
               </td>
@@ -42,10 +53,14 @@ export default function CoverageTable({ rows }: { rows: CoverageRow[] }) {
                 </span>
               </td>
               <td className="px-4 py-3">
-                <DiscoverySourceBadge source={lp.discoverySource} href={lp.discoverySourceUrl} />
+                <DiscoverySourceBadge
+                  source={lp.discoverySource}
+                  href={lp.discoverySourceUrl}
+                />
               </td>
               <td className="px-4 py-3 font-mono text-[12.5px] text-ink-soft">
-                {lp.sampleSize.toLocaleString()} / {lp.totalLaunchesUpstream?.toLocaleString() ?? "—"}
+                {lp.sampleSize.toLocaleString()} /{' '}
+                {lp.totalLaunchesUpstream?.toLocaleString() ?? '—'}
               </td>
               <td className="px-4 py-3">
                 <span

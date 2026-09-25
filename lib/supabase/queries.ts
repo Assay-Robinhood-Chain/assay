@@ -39,11 +39,11 @@ interface ScoreRow {
   stars: 0 | 1 | 2 | 3;
   is_provisional: boolean;
   sample_size: number;
-  quality: number;
-  mechanism: number;
-  market_health: number;
-  value: number;
-  consistency: number;
+  quality: number | null;
+  mechanism: number | null;
+  market_health: number | null;
+  value: number | null;
+  consistency: number | null;
   disclaimer: string;
 }
 
@@ -79,11 +79,11 @@ function mapScore(launchpadId: string, row: ScoreRow | null): LaunchpadScore {
       isProvisional: true,
       sampleSize: 0,
       dimensions: {
-        quality: 0,
-        mechanism: 0,
-        marketHealth: 0,
-        value: 0,
-        consistency: 0,
+        quality: null,
+        mechanism: null,
+        marketHealth: null,
+        value: null,
+        consistency: null,
       },
       disclaimer: '',
     };
@@ -210,6 +210,30 @@ export async function getLaunchpads(): Promise<Launchpad[]> {
   return results.sort((a, b) => b.score.finalScore - a.score.finalScore);
 }
 
+/** Every launch of one launchpad, newest first. PostgREST caps a single
+ * request at 1000 rows and truncates silently, so this pages through with
+ * .range() — a launchpad with a larger sample would otherwise show only its
+ * newest 1000 launches next to a sample count that says more. */
+// deno-lint-ignore no-explicit-any
+async function fetchAllLaunchRows(supabase: any, launchpadId: string) {
+  const PAGE = 1000;
+  // deno-lint-ignore no-explicit-any
+  const rows: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('launches')
+      .select('*')
+      .eq('launchpad_id', launchpadId)
+      .order('launch_date', { ascending: false })
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error) return { data: rows.length > 0 ? rows : null, error };
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) break;
+  }
+  return { data: rows, error: null };
+}
+
 /** Detail view: full launchpad, including launches, badges, and
  * 30-day score history — used by app/launchpad/[slug]/page.tsx. */
 export async function getLaunchpadBySlug(
@@ -245,24 +269,26 @@ export async function getLaunchpadBySlug(
       .order('score_date', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Newest 90 days, then flipped to chronological below. (Ordering
+    // ascending + limit would return the OLDEST 90 and freeze the chart
+    // after three months.)
     supabase
       .from('launchpad_scores')
       .select('score_date, final_score')
       .eq('launchpad_id', row.id)
-      .order('score_date', { ascending: true })
+      .order('score_date', { ascending: false })
       .limit(90),
-    supabase
-      .from('launches')
-      .select('*')
-      .eq('launchpad_id', row.id)
-      .order('launch_date', { ascending: false }),
+    fetchAllLaunchRows(supabase, row.id),
     supabase.from('launchpad_badges').select('*').eq('launchpad_id', row.id),
   ]);
 
-  const scoreHistory: ScoreHistoryPoint[] = (historyRows ?? []).map((r) => ({
-    date: r.score_date,
-    finalScore: r.final_score,
-  }));
+  const scoreHistory: ScoreHistoryPoint[] = (historyRows ?? [])
+    .slice()
+    .reverse()
+    .map((r) => ({
+      date: r.score_date,
+      finalScore: r.final_score,
+    }));
 
   return mapLaunchpad(
     row as LaunchpadRow,

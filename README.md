@@ -51,14 +51,20 @@ Everything needed to stand up the real backend lives in `supabase/`:
 supabase/
   migrations/
     0001_init.sql          # tables + indexes + RLS policies
-    0002_cron_schedule.sql # the 2 pg_cron jobs (run AFTER deploying functions)
+    0002_cron_schedule.sql # the 2 original pg_cron jobs (run AFTER deploying functions)
     0003_community_reports_and_priors.sql # remaining 2 core tables (brief section 9)
+    ...                    # 0004-0006: snapshot retention, rate limits, moderation webhook
+    0007_backfill_enrichment.sql # metrics_fetched_at queue column + Cron 3 (see below)
   seed.sql                  # mirrors lib/data.ts's mock dataset
   functions/
     ingestion-rotation/     # Cron 1 — hourly. Dexscreener + Blockscout refresh.
-    scoring-sweep/          # Cron 2 — daily. Recomputes launchpad_scores.
-    onboarding-backfill/    # NOT a cron — event-triggered once per launchpad.
-    _shared/                # adapters, constants, admin client
+    scoring-sweep/          # Cron 2 — daily. Recomputes launchpad_scores (safety-net sweep).
+    backfill-enrichment/    # Cron 3 — every 5 min. Drains the async token-metrics queue
+                             # a new backfill leaves behind (see onboarding-backfill below).
+    onboarding-backfill/    # NOT a cron — event-triggered once per launchpad. Inserts
+                             # launches + an initial score fast; does NOT fetch per-token
+                             # metrics itself anymore — backfill-enrichment does that async.
+    _shared/                # adapters, constants, scoring, admin client
 ```
 
 ### Setup
@@ -77,12 +83,14 @@ supabase/
    ```bash
    supabase functions deploy ingestion-rotation
    supabase functions deploy scoring-sweep
+   supabase functions deploy backfill-enrichment
    supabase functions deploy onboarding-backfill
    supabase secrets set CRON_SECRET=... ADMIN_API_KEY=... \
      DEXSCREENER_API_BASE_URL=... BLOCKSCOUT_API_BASE_URL=... BITQUERY_API_KEY=...
    ```
-5. Edit `supabase/migrations/0002_cron_schedule.sql`, replace `<PROJECT_REF>`
-   with your project ref, then run it (SQL editor or `supabase db push`).
+5. Edit `supabase/migrations/0002_cron_schedule.sql` and
+   `0007_backfill_enrichment.sql`, replace `<PROJECT_REF>` with your project
+   ref in both, then run them (SQL editor or `supabase db push`).
 
 ### Switching the frontend from mock data to Supabase
 
@@ -112,10 +120,11 @@ otherwise — no page-level change needed there.
 `launch_metrics_snapshot` is left as a plain indexed Postgres table (see
 the commented-out block at the bottom of `0001_init.sql`). Continuous
 aggregates / compression are Timescale Community-licensed and may not be
-available on hosted Supabase — at Assay's scale (sample capped at 250
-launches/launchpad) a plain table with a `pg_cron` pruning job is likely
-enough; revisit only if `SNAPSHOT_RETENTION_DAYS` growth becomes a real
-storage problem (Free tier: 500 MB).
+available on hosted Supabase — at Assay's scale (backfill sample sized at
+20% of each launchpad's upstream total, capped at 1,000) a plain table with a
+`pg_cron` pruning job is likely enough for most launchpads; revisit if
+`SNAPSHOT_RETENTION_DAYS` growth becomes a real storage problem (Free
+tier: 500 MB), especially once a very large factory is onboarded.
 
 ## Notes
 

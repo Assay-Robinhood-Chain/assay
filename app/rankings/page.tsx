@@ -4,6 +4,7 @@ import Reveal from '@/components/Reveal';
 import { PageIcon, type PageIconKind } from '@/components/icons/PageIcon';
 import { getLaunchpads } from '@/lib/supabase/queries';
 import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
+import { hasScore } from '@/lib/scoring';
 
 /** Same accent treatment as the homepage's "method" dimension cards —
  * border tint + glow shadow on hover, plus a top bar that wipes in. */
@@ -36,7 +37,9 @@ export const metadata: Metadata = {
 export default async function RankingsPage() {
   const launchpads = await getLaunchpads();
 
-  const scored = launchpads.filter((lp) => lp.sampleSize > 0);
+  const scored = launchpads.filter(
+    (lp) => lp.sampleSize > 0 && hasScore(lp.score),
+  );
   const avgScore = scored.length
     ? Math.round(
         scored.reduce((sum, lp) => sum + lp.score.finalScore, 0) /
@@ -82,11 +85,11 @@ export default async function RankingsPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
-        <p className="mb-3 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-cobalt">
+        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#141413]">
           <PageIcon kind="list" size={13} />
           Full directory
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="text-3xl font-semibold font-mono tracking-tight text-ink">
           Rankings
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
@@ -96,28 +99,37 @@ export default async function RankingsPage() {
         </p>
       </Reveal>
 
-      {/* Stat strip — staggered entrance, level grid (aligned with Get Listed's strip) */}
+      {/* Stat strip — staggered entrance, level grid (aligned with Get Listed's strip).
+       * Cards are a fixed dark fill (bg-[#141413], same hex as the homepage's
+       * "See the Measurements" button) regardless of site theme. The border
+       * is the only part that reacts to theme: thin/black at rest, and — via
+       * .rank-stat-card in globals.css — white and thicker in dark theme, so
+       * the card doesn't blend into an equally-dark page. */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s, i) => {
           const accent = ACCENT[s.tone];
           return (
             <Reveal key={s.label} delay={0.05 + i * 0.05}>
               <div
-                className={`group relative overflow-hidden rounded-xl border border-line bg-card p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
+                className={`dark-card group relative overflow-hidden rounded-xl border bg-[#141413] p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 ${accent.border} ${accent.glow}`}
               >
                 <span
                   className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                 />
-                <div
-                  className={`icon-chip grid h-7 w-7 place-items-center rounded-lg ${toneCls[s.tone]}`}
-                >
-                  <PageIcon kind={s.icon} size={14} />
-                </div>
-                <div className="mt-3 font-mono text-xl font-semibold text-ink">
-                  {s.value}
-                </div>
-                <div className="mt-0.5 text-[11.5px] uppercase tracking-wide text-faint">
-                  {s.label}
+                <div className="flex items-start gap-2">
+                  <div
+                    className={`icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg ${toneCls[s.tone]}`}
+                  >
+                    <PageIcon kind={s.icon} size={14} />
+                  </div>
+                  <div>
+                    <div className="text-[12px] tracking-normal text-[#b5b2a6]">
+                      {s.label}
+                    </div>
+                    <div className="mt-1 font-mono text-xl font-bold text-[#f3f1ea]">
+                      {s.value}
+                    </div>
+                  </div>
                 </div>
               </div>
             </Reveal>

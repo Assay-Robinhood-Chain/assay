@@ -1,26 +1,30 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Launchpad } from "@/lib/types";
-import { rampColor } from "@/lib/scoring";
-import { TARGET_CHAIN, MOBILE_BREAKPOINT_PX } from "@/lib/constants";
-import DirectorySkeleton from "./DirectorySkeleton";
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Launchpad } from '@/lib/types';
+import { rampColor } from '@/lib/scoring';
+import { TARGET_CHAIN, MOBILE_BREAKPOINT_PX } from '@/lib/constants';
+import DirectorySkeleton from './DirectorySkeleton';
 
-type SortKey = "score" | "quality" | "marketHealth" | "sample" | "name";
+type SortKey = 'score' | 'quality' | 'marketHealth' | 'sample' | 'name';
 
 const RAMP_BG: Record<string, string> = {
-  green: "bg-up",
-  amber: "bg-gold",
-  red: "bg-down",
+  green: 'bg-up',
+  amber: 'bg-gold',
+  red: 'bg-down',
 };
 
-export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[] }) {
+export default function DirectoryTable({
+  launchpads,
+}: {
+  launchpads: Launchpad[];
+}) {
   const [loading, setLoading] = useState(true);
   const [minStars, setMinStars] = useState(0);
   const [includeProvisional, setIncludeProvisional] = useState(true);
-  const [sortKey, setSortKey] = useState<SortKey>("score");
+  const [sortKey, setSortKey] = useState<SortKey>('score');
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
 
   // Skeleton mirrors the real fetch: this data is already resolved
@@ -34,20 +38,29 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
 
   const rows = useMemo(() => {
     let list = launchpads.filter((lp) => lp.score.stars >= minStars);
-    if (!includeProvisional) list = list.filter((lp) => !lp.score.isProvisional);
+    if (!includeProvisional)
+      list = list.filter((lp) => !lp.score.isProvisional);
 
     // Client-side sort ONLY on already-fetched data — never triggers a
     // new request (brief, 11.2: avoid hammering /launchpads on click).
     const dir = sortDir;
     list = [...list].sort((a, b) => {
       switch (sortKey) {
-        case "name":
+        case 'name':
           return dir * a.name.localeCompare(b.name);
-        case "quality":
-          return dir * (a.score.dimensions.quality - b.score.dimensions.quality);
-        case "marketHealth":
-          return dir * (a.score.dimensions.marketHealth - b.score.dimensions.marketHealth);
-        case "sample":
+        case 'quality':
+          return (
+            dir *
+            ((a.score.dimensions.quality ?? -1) -
+              (b.score.dimensions.quality ?? -1))
+          );
+        case 'marketHealth':
+          return (
+            dir *
+            ((a.score.dimensions.marketHealth ?? -1) -
+              (b.score.dimensions.marketHealth ?? -1))
+          );
+        case 'sample':
           return dir * (a.sampleSize - b.sampleSize);
         default:
           return dir * (a.score.finalScore - b.score.finalScore);
@@ -68,10 +81,12 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
   const headerBtn = (key: SortKey, label: string) => (
     <button
       onClick={() => toggleSort(key)}
-      className="flex items-center gap-1 text-left text-[11px] font-medium uppercase tracking-wide text-faint transition-colors hover:text-ink"
+      className="flex items-center gap-1 text-left text-[11px] font-bold uppercase tracking-wide text-[#141413]"
     >
       {label}
-      {sortKey === key && <span className="text-cobalt">{sortDir === -1 ? "↓" : "↑"}</span>}
+      {sortKey === key && (
+        <span className="text-cobalt">{sortDir === -1 ? '↓' : '↑'}</span>
+      )}
     </button>
   );
 
@@ -83,27 +98,29 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
           <button
             key={s}
             onClick={() => setMinStars(s)}
-            className={`rounded-full border px-3 py-1.5 font-mono text-[12.5px] transition-colors ${
+            className={`rounded-full border px-3 py-1.5 font-mono text-[12.5px] font-bold transition-colors ${
               minStars === s
-                ? "border-cobalt bg-cobalt-soft text-cobalt"
-                : "border-line text-muted hover:border-faint"
+                ? 'border-[#141413] bg-[#e8e402] text-[#141413]'
+                : 'border-line font-normal text-muted hover:border-faint'
             }`}
           >
-            {s === 0 ? "All" : `${"★".repeat(s)}+`}
+            {s === 0 ? 'All' : `${'★'.repeat(s)}+`}
           </button>
         ))}
         <span className="mx-1 h-4 w-px bg-line" />
         <button
           onClick={() => setIncludeProvisional((v) => !v)}
-          className={`rounded-full border px-3 py-1.5 text-[12.5px] transition-colors ${
+          className={`rounded-full border px-3 py-1.5 text-[12.5px] font-bold transition-colors ${
             includeProvisional
-              ? "border-line text-muted hover:border-faint"
-              : "border-cobalt bg-cobalt-soft text-cobalt"
+              ? 'border-line font-normal text-muted hover:border-faint'
+              : 'border-[#141413] bg-[#e8e402] text-[#141413]'
           }`}
         >
-          {includeProvisional ? "Including provisional" : "Excluding provisional"}
+          {includeProvisional
+            ? 'Including provisional'
+            : 'Excluding provisional'}
         </button>
-        <span className="ml-auto rounded-full border border-line px-3 py-1.5 font-mono text-[12.5px] text-faint">
+        <span className="ml-auto rounded-full border border-[#141413] bg-[#e8e402] px-3 py-1.5 font-mono text-[12.5px] font-bold text-[#141413]">
           chain: {TARGET_CHAIN}
         </span>
       </div>
@@ -114,46 +131,57 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
             <DirectorySkeleton />
           </motion.div>
         ) : (
-          <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+          <motion.div
+            key="table"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+          >
             {/* Desktop table — becomes cards below MOBILE_BREAKPOINT_PX */}
             <div
-              className="hidden overflow-hidden rounded-xl border border-line md:block"
-              style={{ ["--bp" as string]: `${MOBILE_BREAKPOINT_PX}px` }}
+              className="dark-card hidden overflow-hidden rounded-xl border bg-[#141413] md:block"
+              style={{ ['--bp' as string]: `${MOBILE_BREAKPOINT_PX}px` }}
             >
-              <div className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] gap-4 border-b border-line bg-panel px-5 py-2.5">
-                {headerBtn("name", "Launchpad")}
-                {headerBtn("score", "Score")}
-                {headerBtn("quality", "Quality")}
-                {headerBtn("marketHealth", "Market health")}
-                {headerBtn("sample", "Sample")}
+              <div className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] gap-4 border-b border-[#141413] bg-[#e8e402] px-5 py-2.5">
+                {headerBtn('name', 'Launchpad')}
+                {headerBtn('score', 'Score')}
+                {headerBtn('quality', 'Quality')}
+                {headerBtn('marketHealth', 'Market health')}
+                {headerBtn('sample', 'Sample')}
               </div>
               {rows.map((lp, i) => (
                 <motion.div
                   key={lp.id}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
+                  transition={{
+                    duration: 0.25,
+                    delay: Math.min(i * 0.03, 0.3),
+                  }}
                 >
                   <Link
                     href={`/launchpad/${lp.slug}`}
-                    className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] items-center gap-4 border-b border-line-soft px-5 py-3.5 last:border-0 hover:bg-panel/60"
+                    className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] items-center gap-4 border-b border-[#262620] px-5 py-3.5 last:border-0 hover:bg-white/5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line bg-card font-mono text-[11px] text-faint">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#6e6c63]">
                         {lp.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm font-medium text-ink">{lp.name}</span>
+                          <span className="truncate text-sm font-bold text-[#f3f1ea]">
+                            {lp.name}
+                          </span>
                           {lp.score.isProvisional && (
-                            <span className="rounded-full border border-dashed border-faint px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-faint">
+                            <span className="rounded-full border border-dashed border-[#4a4740] px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-[#b5b2a6]">
                               Provisional
                             </span>
                           )}
                         </div>
-                        <span className="truncate font-mono text-[11px] text-faint">
-                          {lp.sampleSize.toLocaleString()} of{" "}
-                          {lp.totalLaunchesUpstream?.toLocaleString() ?? "—"} launches tracked
+                        <span className="truncate font-mono text-[11px] text-[#6e6c63]">
+                          {lp.sampleSize.toLocaleString()} of{' '}
+                          {lp.totalLaunchesUpstream?.toLocaleString() ?? '—'}{' '}
+                          launches tracked
                         </span>
                       </div>
                     </div>
@@ -161,29 +189,31 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
                     <div className="flex items-baseline gap-1.5">
                       <span
                         className={`font-mono text-sm font-semibold ${
-                          rampColor(lp.score.finalScore) === "green"
-                            ? "text-up"
-                            : rampColor(lp.score.finalScore) === "amber"
-                            ? "text-gold"
-                            : "text-down"
+                          rampColor(lp.score.finalScore) === 'green'
+                            ? 'text-up'
+                            : rampColor(lp.score.finalScore) === 'amber'
+                              ? 'text-gold'
+                              : 'text-down'
                         }`}
                       >
                         {lp.score.finalScore.toFixed(1)}
                       </span>
-                      <span className="font-mono text-[11px] text-faint">
-                        {"★".repeat(lp.score.stars)}
+                      <span className="font-mono text-[11px] text-[#6e6c63]">
+                        {'★'.repeat(lp.score.stars)}
                       </span>
                     </div>
 
                     <DimCell value={lp.score.dimensions.quality} />
                     <DimCell value={lp.score.dimensions.marketHealth} />
 
-                    <span className="font-mono text-[12.5px] text-ink-soft">{lp.sampleSize}</span>
+                    <span className="font-mono text-[12.5px] text-[#b5b2a6]">
+                      {lp.sampleSize}
+                    </span>
                   </Link>
                 </motion.div>
               ))}
               {rows.length === 0 && (
-                <div className="px-5 py-10 text-center text-sm text-muted">
+                <div className="px-5 py-10 text-center text-sm text-[#b5b2a6]">
                   No launchpads match this filter.
                 </div>
               )}
@@ -196,40 +226,45 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
                   key={lp.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
+                  transition={{
+                    duration: 0.25,
+                    delay: Math.min(i * 0.03, 0.3),
+                  }}
                 >
                   <Link
                     href={`/launchpad/${lp.slug}`}
-                    className="block rounded-xl border border-line bg-card p-4 active:bg-panel/60"
+                    className="dark-card block rounded-xl border bg-[#141413] p-4 active:bg-white/5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-panel font-mono text-[11px] text-faint">
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#6e6c63]">
                           {lp.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-ink">{lp.name}</div>
-                          <div className="font-mono text-[11px] text-faint">
+                          <div className="truncate text-sm font-bold text-[#f3f1ea]">
+                            {lp.name}
+                          </div>
+                          <div className="font-mono text-[11px] text-[#6e6c63]">
                             sample {lp.sampleSize}
-                            {lp.score.isProvisional ? " · provisional" : ""}
+                            {lp.score.isProvisional ? ' · provisional' : ''}
                           </div>
                         </div>
                       </div>
                       <div className="shrink-0 text-right">
                         <div
                           className={`font-mono text-base font-semibold ${
-                            rampColor(lp.score.finalScore) === "green"
-                              ? "text-up"
-                              : rampColor(lp.score.finalScore) === "amber"
-                              ? "text-gold"
-                              : "text-down"
+                            rampColor(lp.score.finalScore) === 'green'
+                              ? 'text-up'
+                              : rampColor(lp.score.finalScore) === 'amber'
+                                ? 'text-gold'
+                                : 'text-down'
                           }`}
                         >
                           {lp.score.finalScore.toFixed(1)}
                         </div>
-                        <div className="font-mono text-[11px] text-faint">
-                          {"★".repeat(lp.score.stars)}
-                          {"☆".repeat(3 - lp.score.stars)}
+                        <div className="font-mono text-[11px] text-[#6e6c63]">
+                          {'★'.repeat(lp.score.stars)}
+                          {'☆'.repeat(3 - lp.score.stars)}
                         </div>
                       </div>
                     </div>
@@ -237,7 +272,7 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
                 </motion.div>
               ))}
               {rows.length === 0 && (
-                <div className="rounded-xl border border-line-soft bg-panel px-4 py-8 text-center text-sm text-muted">
+                <div className="dark-card rounded-xl border bg-[#141413] px-4 py-8 text-center text-sm text-[#b5b2a6]">
                   No launchpads match this filter.
                 </div>
               )}
@@ -249,17 +284,27 @@ export default function DirectoryTable({ launchpads }: { launchpads: Launchpad[]
   );
 }
 
-function DimCell({ value }: { value: number }) {
+function DimCell({ value }: { value: number | null }) {
+  if (value === null) {
+    return (
+      <div className="flex items-center gap-2" title="Not enough data yet">
+        <div className="h-1.5 w-full rounded-full border border-dashed border-[#3a3733]" />
+        <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#6e6c63]">
+          n/a
+        </span>
+      </div>
+    );
+  }
   const color = rampColor(value);
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-line-soft">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#2a2a26]">
         <div
           className={`h-full rounded-full ${RAMP_BG[color]}`}
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className="w-6 shrink-0 text-right font-mono text-[11px] text-faint">
+      <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#6e6c63]">
         {value.toFixed(0)}
       </span>
     </div>

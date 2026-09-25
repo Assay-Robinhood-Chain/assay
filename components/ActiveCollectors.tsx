@@ -92,8 +92,8 @@ export default function ActiveCollectors() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.4, delay: i * 0.06 }}
-            className={`group relative overflow-hidden rounded-xl border bg-card p-4 transition-all duration-300 ease-out hover:-translate-y-1 ${SPAN[c.name] ?? ''} ${
-              isFallback ? 'border-dashed border-line' : 'border-line'
+            className={`flow-step group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ease-out hover:-translate-y-1 ${SPAN[c.name] ?? ''} ${
+              isFallback ? 'border-dashed' : ''
             } ${accent.ring} ${accent.glow}`}
           >
             <span
@@ -102,21 +102,23 @@ export default function ActiveCollectors() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${accent.badgeBg} ${accent.text}`}
+                  className={`pipeline-badge pipeline-badge-${ROLE_ACCENT[c.role]} grid h-8 w-8 shrink-0 place-items-center rounded-lg`}
                 >
                   <SourceIcon kind={icon} />
                 </span>
-                <span className="text-sm font-medium text-ink">{c.name}</span>
+                <span className="text-sm font-medium text-night-ink">
+                  {c.name}
+                </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-up">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-night-up">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-up opacity-60 motion-reduce:animate-none" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-up" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-night-up opacity-60 motion-reduce:animate-none" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-night-up" />
                 </span>
                 online
               </span>
             </div>
-            <p className="mt-2 max-w-md text-[12px] leading-relaxed text-muted">
+            <p className="mt-2 max-w-md text-[12px] leading-relaxed text-night-ink">
               {c.provides}
             </p>
             <span

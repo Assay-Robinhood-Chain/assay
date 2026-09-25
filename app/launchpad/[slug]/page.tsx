@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLaunchpadBySlug, getLaunchpads } from '@/lib/supabase/queries';
-import { isStale, formatDate } from '@/lib/scoring';
+import { isStale, formatDate, hasScore } from '@/lib/scoring';
 import {
   DIMENSION_LABELS,
   DIMENSION_DESCRIPTIONS,
+  DIMENSION_BASIS,
   DIMENSION_WEIGHTS,
 } from '@/lib/constants';
 import ScoreBadge from '@/components/ScoreBadge';
@@ -97,7 +98,7 @@ export default async function LaunchpadDetailPage({
               </div>
             </div>
 
-            {lp.sampleSize === 0 ? null : (
+            {lp.sampleSize === 0 || !hasScore(lp.score) ? null : (
               <ScoreBadge
                 score={lp.score.finalScore}
                 stars={lp.score.stars}
@@ -108,14 +109,20 @@ export default async function LaunchpadDetailPage({
             )}
           </div>
 
-          {lp.sampleSize === 0 && (
+          {(lp.sampleSize === 0 || !hasScore(lp.score)) && (
             <div className="mt-6">
               <NotYetScored />
             </div>
           )}
-          {lp.score.isProvisional && (
+          {hasScore(lp.score) && lp.score.isProvisional && (
             <div className="mt-5">
-              <ProvisionalNote sampleSize={lp.score.sampleSize} />
+              <ProvisionalNote
+                sampleSize={lp.score.sampleSize}
+                missingDimensions={
+                  Object.values(lp.score.dimensions).filter((v) => v === null)
+                    .length
+                }
+              />
             </div>
           )}
         </div>
@@ -139,6 +146,7 @@ export default async function LaunchpadDetailPage({
                   value={lp.score.dimensions[key]}
                   weight={DIMENSION_WEIGHTS[key]}
                   description={DIMENSION_DESCRIPTIONS[key]}
+                  basis={DIMENSION_BASIS[key]}
                   delay={i * 0.05}
                 />
               ))}

@@ -79,7 +79,7 @@ function makeEvent(id: number, lp: Launchpad): FeedEvent {
     source: 'Scorer',
     lpSlug: lp.slug,
     lpName: lp.name,
-    detail: `Composite recomputed · algorithm_version v1.3`,
+    detail: `Composite recomputed · algorithm_version v1.6`,
     ms: 5 + Math.floor(Math.random() * 15),
   };
 }
@@ -88,8 +88,6 @@ const MAX_BUFFER = 40;
 
 export default function LiveFeed({ launchpads }: { launchpads: Launchpad[] }) {
   const [events, setEvents] = useState<FeedEvent[]>([]);
-  const [paused, setPaused] = useState(false);
-  const [filter, setFilter] = useState<string>('ALL');
   const idRef = useRef(0);
   const reducedMotionRef = useRef(false);
 
@@ -100,7 +98,7 @@ export default function LiveFeed({ launchpads }: { launchpads: Launchpad[] }) {
   }, []);
 
   useEffect(() => {
-    if (paused || launchpads.length === 0) return;
+    if (launchpads.length === 0) return;
     const t = setInterval(
       () => {
         const lp = launchpads[Math.floor(Math.random() * launchpads.length)];
@@ -112,7 +110,7 @@ export default function LiveFeed({ launchpads }: { launchpads: Launchpad[] }) {
       reducedMotionRef.current ? 3200 : 1400,
     );
     return () => clearInterval(t);
-  }, [paused, launchpads]);
+  }, [launchpads]);
 
   // Seed a few events immediately so the panel isn't empty on load.
   useEffect(() => {
@@ -129,54 +127,17 @@ export default function LiveFeed({ launchpads }: { launchpads: Launchpad[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launchpads]);
 
-  const filtered =
-    filter === 'ALL' ? events : events.filter((e) => e.lpSlug === filter);
-
   return (
-    <div className="rounded-xl border border-line bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <FilterChip
-            active={filter === 'ALL'}
-            onClick={() => setFilter('ALL')}
-          >
-            ALL
-          </FilterChip>
-          {launchpads.map((lp) => (
-            <FilterChip
-              key={lp.slug}
-              active={filter === lp.slug}
-              onClick={() => setFilter(lp.slug)}
-            >
-              {lp.name.slice(0, 3).toUpperCase()}
-            </FilterChip>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPaused((p) => !p)}
-            className="rounded-md border border-line px-2.5 py-1 text-[11.5px] text-ink-soft hover:border-faint"
-          >
-            {paused ? '▶ Resume' : '⏸ Pause'}
-          </button>
-          <button
-            onClick={() => setEvents([])}
-            className="rounded-md border border-line px-2.5 py-1 text-[11.5px] text-ink-soft hover:border-faint"
-          >
-            Clear
-          </button>
-        </div>
-      </div>
-
+    <div className="coverage-dark-surface rounded-xl border border-line bg-card">
       <div className="h-[280px] overflow-y-auto px-4 py-3 font-mono text-[12px] leading-relaxed">
-        {filtered.length === 0 ? (
+        {events.length === 0 ? (
           <div className="grid h-full place-items-center text-faint">
             {launchpads.length === 0
               ? 'No launchpads tracked yet.'
               : 'No events in buffer.'}
           </div>
         ) : (
-          filtered.map((e) => (
+          events.map((e) => (
             <div
               key={e.id}
               className="border-b border-line-soft/60 py-1.5 last:border-0"
@@ -196,38 +157,13 @@ export default function LiveFeed({ launchpads }: { launchpads: Launchpad[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2 text-[11px] text-faint">
         <span>
           Events in buffer:{' '}
-          <span className="font-mono text-ink-soft">{filtered.length}</span>
+          <span className="font-mono text-ink-soft">{events.length}</span>
         </span>
         <span>
           Status:{' '}
-          <span className="font-mono text-up">
-            {paused ? 'PAUSED' : `ALL STREAMS REPORTING`}
-          </span>
+          <span className="font-mono text-up">ALL STREAMS REPORTING</span>
         </span>
       </div>
     </div>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors ${
-        active
-          ? 'border-cobalt bg-cobalt-soft text-cobalt'
-          : 'border-line text-muted hover:border-faint'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

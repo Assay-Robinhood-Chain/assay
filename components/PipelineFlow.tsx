@@ -13,21 +13,21 @@ const ACCENT: Record<
     text: 'text-cobalt',
     badgeBg: 'bg-cobalt-soft',
     ring: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_16px_36px_-18px_var(--cobalt)]',
+    glow: 'hover:shadow-[0_18px_40px_-20px_var(--cobalt)]',
     bar: 'bg-cobalt',
   },
   gold: {
     text: 'text-gold',
     badgeBg: 'bg-gold-soft',
     ring: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_16px_36px_-18px_var(--gold)]',
+    glow: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
     bar: 'bg-gold',
   },
   up: {
     text: 'text-up',
     badgeBg: 'bg-up-soft',
     ring: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_16px_36px_-18px_var(--up)]',
+    glow: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
     bar: 'bg-up',
   },
   faint: {
@@ -37,6 +37,13 @@ const ACCENT: Record<
     glow: '',
     bar: 'bg-faint',
   },
+};
+
+const FLOW_BAR: Record<Accent, string> = {
+  cobalt: 'bg-cobalt',
+  gold: 'bg-gold',
+  up: 'bg-up',
+  faint: 'bg-faint',
 };
 
 const STEPS: {
@@ -93,9 +100,6 @@ const STEPS: {
 export default function PipelineFlow() {
   return (
     <div className="relative">
-      {/* connecting track running behind the staggered cards */}
-      <div className="pointer-events-none absolute left-0 right-0 top-[52px] hidden h-px bg-line-soft sm:block" />
-
       <div className="grid gap-3 sm:grid-cols-5">
         {STEPS.map((s, i) => {
           const a = ACCENT[s.accent];
@@ -106,32 +110,30 @@ export default function PipelineFlow() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.45, delay: i * 0.08 }}
-              className={`group relative rounded-xl border border-line bg-card p-4 transition-shadow duration-300 hover:-translate-y-0.5 ${a.ring} ${a.glow}`}
+              className={`flow-step group relative rounded-xl border p-4 transition-all duration-300 ease-out hover:-translate-y-1 ${a.ring} ${a.glow}`}
               style={{ marginTop: s.offset }}
             >
               <span
-                className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl transition-transform duration-300 group-hover:scale-x-100 ${a.bar}`}
+                className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl transition-transform duration-300 group-hover:scale-x-100 ${FLOW_BAR[s.accent]}`}
               />
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] text-faint">{s.n}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[11px] text-night-soft">
+                    {s.n}
+                  </span>
+                  <span className="text-sm font-medium text-night-ink">
+                    {s.title}
+                  </span>
+                </div>
                 <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-md ${a.badgeBg} ${a.text}`}
+                  className={`pipeline-badge pipeline-badge-${s.accent} hidden h-7 w-7 shrink-0 place-items-center rounded-md lg:grid`}
                 >
                   <PipelineIcon kind={s.icon} />
                 </span>
               </div>
-              <div className="mt-2 text-sm font-medium text-ink">{s.title}</div>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+              <p className="mt-1.5 text-[12px] leading-relaxed text-night-ink">
                 {s.desc}
               </p>
-
-              {i < STEPS.length - 1 && (
-                <span
-                  className={`pointer-events-none absolute -right-[11px] top-[30px] hidden font-mono text-[13px] sm:block ${a.text}`}
-                >
-                  →
-                </span>
-              )}
             </motion.div>
           );
         })}

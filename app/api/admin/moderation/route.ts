@@ -57,9 +57,16 @@ function slugify(input: string): string {
 function parseNewLaunchpadValue(value: string) {
   const factoryMatch = value.match(/factory:\s*([^\s;]+)/i);
   const websiteMatch = value.match(/website:\s*([^\s;]+)/i);
+  // Strip the leading "Mechanism: …; Factory: …; Website: …;" segments
+  // so only the submitter's free-text "Description"
+  // remains. That text alone becomes the launchpad's description.
+  const context = value
+    .replace(/^\s*(?:(?:mechanism|factory|website):[^;]*;?\s*)+/i, '')
+    .trim();
   return {
     deployerAddress: factoryMatch?.[1] ?? null,
     websiteUrl: websiteMatch?.[1] ?? null,
+    context,
   };
 }
 
@@ -160,7 +167,7 @@ async function onboardApprovedLaunchpad(
     };
   }
 
-  const { deployerAddress, websiteUrl } = parseNewLaunchpadValue(
+  const { deployerAddress, websiteUrl, context } = parseNewLaunchpadValue(
     submission.value,
   );
 
@@ -169,7 +176,9 @@ async function onboardApprovedLaunchpad(
     .insert({
       slug,
       name: submission.launchpad_slug,
-      description: submission.value,
+      // Only the submitter's Description text — not the
+      // "Factory: …; Website: …" prefix string.
+      description: context,
       deployer_addresses: deployerAddress ? [deployerAddress] : [],
       website_url: websiteUrl,
       // Unverified until the onboarding backfill runs a real check against
@@ -205,7 +214,7 @@ async function applyFieldUpdate(
     };
   }
   const slug = slugify(submission.launchpad_slug);
-  const { deployerAddress, websiteUrl } = parseNewLaunchpadValue(
+  const { deployerAddress, websiteUrl, context } = parseNewLaunchpadValue(
     submission.value,
   );
 

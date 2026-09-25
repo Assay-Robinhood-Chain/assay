@@ -4,7 +4,7 @@ import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-line bg-panel">
+    <footer className="layout-surface border-t border-line bg-panel">
       <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
         <div className="grid gap-10 sm:grid-cols-3">
           <div>
@@ -64,7 +64,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Assay. Not a registered investment
             adviser.
           </span>
-          <span className="font-mono">algorithm_version: v1.3</span>
+          <span className="font-mono">algorithm_version: v1.6</span>
         </div>
       </div>
     </footer>

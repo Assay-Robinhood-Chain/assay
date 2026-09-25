@@ -13,17 +13,33 @@ import {
   bitqueryAdapter,
   countUpstreamLaunchesViaBlockscout,
   rpcSelfIndexedAdapter,
+  sampleWithMinimumAge,
 } from '../_shared/adapters.ts';
-import { computeBackfillSample } from '../_shared/constants.ts';
+import {
+  enrichLaunchesBatch,
+  type EnrichableLaunch,
+} from '../_shared/enrichment.ts';
+import {
+  computeBackfillSample,
+  ONBOARDING_SYNC_ENRICH_LIMIT,
+  ENRICHMENT_CONCURRENCY,
+  BACKFILL_POOL_MULTIPLIER,
+} from '../_shared/constants.ts';
+import { computeAndStoreLaunchpadScore } from '../_shared/scoring.ts';
 import {
   initSentry,
   captureException,
   flushSentry,
 } from '../_shared/sentry.ts';
 
+const BACKFILL_INSERT_CHUNK_SIZE = 500;
+
 initSentry('onboarding-backfill');
 
 const BLOCKSCOUT_BASE_URL = Deno.env.get('BLOCKSCOUT_API_BASE_URL') ?? '';
+const DEXSCREENER_BASE_URL =
+  Deno.env.get('DEXSCREENER_API_BASE_URL') ?? 'https://api.dexscreener.com';
+const MOBULA_BASE_URL = Deno.env.get('MOBULA_API_BASE_URL') || undefined;
 
 Deno.serve(async (req) => {
   // Admin-triggered, not cron-triggered — gated by ADMIN_API_KEY
@@ -117,29 +133,65 @@ Deno.serve(async (req) => {
   // 2. sample = the exact rule from backfill-sampling-policy.md section 1
   const sample = computeBackfillSample(total);
 
-  // 3. fetchRecentLaunches(launchpadId, sample), ORDER BY launch_date DESC
-  const discovered =
+  // 3. fetchLaunchPool(launchpadId, poolTarget) — gather a pool bigger
+  // than `sample` across the whole discoverable history (not just the
+  // newest page), then sampleWithMinimumAge() below picks a RANDOM
+  // `sample` out of it — not "the most recent `sample`" — and guarantees
+  // at least 10% of what comes back is older than MIN_TOKEN_AGE_HOURS
+  // (72h) so Quality/Value/Consistency scoring has mature launches to
+  // work with right away instead of only ever seeing brand-new ones.
+  const poolTarget = sample * BACKFILL_POOL_MULTIPLIER;
+  const pool =
     lp.discovery_source === 'bitquery'
-      ? await bitqueryAdapter(lp.deployer_addresses ?? [], sample)
+      ? await bitqueryAdapter(lp.deployer_addresses ?? [], poolTarget)
       : lp.discovery_source === 'rpc_self_indexed'
         ? await rpcSelfIndexedAdapter(
             lp.deployer_addresses ?? [],
-            sample,
+            poolTarget,
             BLOCKSCOUT_BASE_URL,
           )
         : []; // mobula: wire in a Mobula-informed manual list here.
 
+  // Defensive: whatever adapter produced `pool`, never send the same
+  // token twice in one upsert (Postgres error 21000) — dedupe BEFORE
+  // sampling, so the sample isn't accidentally short a slot because two
+  // entries for the same token both looked like separate candidates.
+  const uniquePool = [
+    ...new Map(
+      pool.map((d) => [d.tokenAddress.toLowerCase(), d] as const),
+    ).values(),
+  ];
+  const discovered = sampleWithMinimumAge(uniquePool, sample);
+
+  // 3.5. Insert in chunks, not one row per round-trip — the sample is
+  // 20% of the upstream total capped at BACKFILL_SAMPLE_CAP, so up to a
+  // thousand rows, and one upsert() per row would be the same
+  // "thousands of sequential round-trips" problem the token metrics
+  // fetch used to have.
   let inserted = 0;
-  for (const launch of discovered.slice(0, sample)) {
-    const { error } = await supabase.from('launches').upsert(
-      {
+  for (const chunk of chunkArray(
+    discovered,
+    BACKFILL_INSERT_CHUNK_SIZE,
+  )) {
+    const { data: upsertedChunk, error } = await supabase
+      .from('launches')
+      .upsert(
+        chunk.map((launch) => ({
+          launchpad_id: lp.id,
+          token_address: launch.tokenAddress,
+          launch_date: launch.launchDate,
+        })),
+        { onConflict: 'launchpad_id,token_address' },
+      )
+      .select('id');
+    if (error) {
+      captureException(error, {
         launchpad_id: lp.id,
-        token_address: launch.tokenAddress,
-        launch_date: launch.launchDate,
-      },
-      { onConflict: 'launchpad_id,token_address' },
-    );
-    if (!error) inserted += 1;
+        chunk_size: chunk.length,
+      });
+      continue;
+    }
+    inserted += upsertedChunk?.length ?? 0;
   }
 
   // 4. record both counts — never let sample_size alone imply the
@@ -153,14 +205,87 @@ Deno.serve(async (req) => {
     })
     .eq('id', lp.id);
 
+  // 5. Enrich the newest ONBOARDING_SYNC_ENRICH_LIMIT launches RIGHT
+  // HERE, synchronously, with Dexscreener (liquidity/volume/name) and
+  // Mobula (peak multiple) — this is the piece that used to be entirely
+  // missing: every launch just inserted has metrics_fetched_at = null
+  // and peak_multiple = null, and previously nothing wrote either one
+  // until backfill-enrichment's next 5-minute tick (and even then,
+  // peak_multiple stayed null forever — no adapter ever computed it).
+  // Approving a launchpad/token would sit at all dashes for minutes,
+  // sometimes indefinitely for peak multiple specifically.
+  //
+  // Kept small (ONBOARDING_SYNC_ENRICH_LIMIT) so this stays well
+  // inside the Edge Function's execution window even when `sample` is
+  // in the thousands — backfill-enrichment still owns the rest of the
+  // sample via its normal queue (metrics_fetched_at IS NULL).
+  let immediateEnrichment: {
+    attempted: number;
+    enriched: number;
+    failed: number;
+  } | null = null;
+
+  if (inserted > 0) {
+    const { data: toEnrichNow, error: toEnrichErr } = await supabase
+      .from('launches')
+      .select('id, token_address, launchpad_id, launch_date')
+      .eq('launchpad_id', lp.id)
+      .is('metrics_fetched_at', null)
+      .order('launch_date', { ascending: false })
+      .limit(ONBOARDING_SYNC_ENRICH_LIMIT);
+
+    if (toEnrichErr) {
+      captureException(toEnrichErr, { launchpad_id: lp.id });
+    } else if (toEnrichNow && toEnrichNow.length > 0) {
+      const batch = toEnrichNow as EnrichableLaunch[];
+      const { enriched, failed } = await enrichLaunchesBatch(supabase, batch, {
+        dexscreenerBaseUrl: DEXSCREENER_BASE_URL,
+        blockscoutBaseUrl: BLOCKSCOUT_BASE_URL,
+        mobulaBaseUrl: MOBULA_BASE_URL,
+        concurrency: Math.min(ENRICHMENT_CONCURRENCY, batch.length),
+      });
+      immediateEnrichment = { attempted: batch.length, enriched, failed };
+    }
+  }
+
+  // 6. Compute a score/rating snapshot from `launches` as it stands
+  // now — AFTER the synchronous enrichment above, so this first
+  // snapshot already reflects real liquidity/peak-multiple data for
+  // whichever launches got enriched just now, not just structural
+  // data. Any launch beyond the sync-enrich limit still starts null
+  // and gets picked up (and re-scored) by backfill-enrichment.
+  const scoreResult = await computeAndStoreLaunchpadScore(supabase, lp.id);
+
   await flushSentry();
+
+  const remainingQueued = Math.max(
+    0,
+    inserted - (immediateEnrichment?.attempted ?? 0),
+  );
 
   return new Response(
     JSON.stringify({
       launchpad_id: lp.id,
       total_launches_upstream: total,
       sample_size: inserted,
+      score: scoreResult,
+      immediate_enrichment: immediateEnrichment,
+      enrichment: {
+        status: remainingQueued > 0 ? 'queued' : 'nothing_to_enrich',
+        queued_launches: remainingQueued,
+        note: immediateEnrichment
+          ? `The ${immediateEnrichment.attempted} most recent launch(es) were enriched synchronously in this request (${immediateEnrichment.enriched} succeeded, ${immediateEnrichment.failed} failed — will retry). Any remaining launches are fetched asynchronously by backfill-enrichment (runs every 5 min).`
+          : 'Token-level price/liquidity/volume snapshots are fetched asynchronously by backfill-enrichment (runs every 5 min) — this response does not wait on that.',
+      },
     }),
     { headers: { 'Content-Type': 'application/json' } },
   );
 });
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
