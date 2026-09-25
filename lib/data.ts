@@ -88,6 +88,10 @@ function launches(
       liquidityUsd: isConfirmedRugpull ? null : Math.round(2000 + r * 480000),
       volume24hUsd: Math.round(500 + r * 900000),
       washTradingFlag: r > 0.85,
+      excludedFromSample: false,
+      metricsFetchedAt: d.toISOString(),
+      isContractVerified: r > 0.15,
+      peakCheckedAt: d.toISOString(),
     });
   }
   return out;
