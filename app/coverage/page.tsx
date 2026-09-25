@@ -106,7 +106,7 @@ export default async function CoveragePage() {
               tone={ACCENT_ORDER[1]}
               accent={ACCENT[ACCENT_ORDER[1]]}
               title="Tokens discovered"
-              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} — most-recent-first.`}
+              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} most-recent-first.`}
             />
             <FlowStep
               n="3"
