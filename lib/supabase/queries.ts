@@ -59,6 +59,10 @@ interface LaunchRow {
   liquidity_usd: number | null;
   volume_24h_usd: number | null;
   wash_trading_flag: boolean;
+  excluded_from_sample: boolean;
+  metrics_fetched_at: string | null;
+  is_contract_verified: boolean | null;
+  peak_checked_at: string | null;
 }
 
 interface BadgeRow {
@@ -122,6 +126,10 @@ function mapLaunch(row: LaunchRow): Launch {
     liquidityUsd: row.liquidity_usd,
     volume24hUsd: row.volume_24h_usd,
     washTradingFlag: row.wash_trading_flag,
+    excludedFromSample: row.excluded_from_sample,
+    metricsFetchedAt: row.metrics_fetched_at,
+    isContractVerified: row.is_contract_verified,
+    peakCheckedAt: row.peak_checked_at,
   };
 }
 

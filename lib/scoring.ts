@@ -1,4 +1,4 @@
-import type { LaunchpadScore } from './types';
+import type { DimensionKey, Launch, LaunchpadScore } from './types';
 import {
   STAR_1_THRESHOLD,
   STAR_2_THRESHOLD,
@@ -7,6 +7,8 @@ import {
   BACKFILL_SAMPLE_RATIO,
   BACKFILL_SAMPLE_CAP,
   STALE_DATA_THRESHOLD_HOURS,
+  MIN_DATA_POINTS_PER_DIMENSION,
+  MIN_TOKEN_AGE_HOURS,
 } from './constants';
 
 /** Maps a 0–100 final score to a 3-stop red/amber/green ramp. The
@@ -65,6 +67,55 @@ export function hoursSince(iso: string, now: Date = new Date()): number {
 
 export function isStale(lastSnapshotAt: string, now?: Date): boolean {
   return hoursSince(lastSnapshotAt, now) > STALE_DATA_THRESHOLD_HOURS;
+}
+
+/** Mirrors computeDimensions()'s eligibility rules (see
+ * supabase/functions/_shared/scoring.ts) closely enough to explain, in one
+ * sentence, why a dimension is still `null` — and how close it is to
+ * filling in. Display-only: never used to decide the score itself, only
+ * to describe it. Returns null once the dimension has enough data (the
+ * caller should already know that from `value !== null`, this is just a
+ * safety fallback). */
+export function dimensionGapReason(
+  key: DimensionKey,
+  launches: Launch[],
+  now: Date = new Date(),
+): string | null {
+  const need = MIN_DATA_POINTS_PER_DIMENSION;
+  // Only launches in the active sample count toward any dimension —
+  // a launch marked "not sampled" doesn't move this number.
+  const sampled = launches.filter((l) => !l.excludedFromSample);
+  const isMature = (l: Launch) =>
+    hoursSince(l.launchDate, now) >= MIN_TOKEN_AGE_HOURS;
+
+  let n: number;
+  let what: string;
+  switch (key) {
+    case 'quality':
+      n = sampled.filter(
+        (l) => l.metricsFetchedAt !== null && isMature(l),
+      ).length;
+      what = `≥${MIN_TOKEN_AGE_HOURS}h old with market data checked`;
+      break;
+    case 'mechanism':
+      n = sampled.filter((l) => l.isContractVerified !== null).length;
+      what = 'with contract-verification data';
+      break;
+    case 'marketHealth':
+      n = sampled.filter((l) => l.metricsFetchedAt !== null).length;
+      what = 'with market data checked';
+      break;
+    case 'value':
+    case 'consistency':
+      n = sampled.filter(
+        (l) =>
+          isMature(l) && (l.peakMultiple !== null || l.peakCheckedAt !== null),
+      ).length;
+      what = `≥${MIN_TOKEN_AGE_HOURS}h old with price history`;
+      break;
+  }
+  if (n >= need) return null;
+  return `${n} of ${need} minimum sampled launches ${what}.`;
 }
 
 /** Pure reimplementation of backfillLaunchpad()'s sizing rule (see

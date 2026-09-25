@@ -2,7 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLaunchpadBySlug, getLaunchpads } from '@/lib/supabase/queries';
-import { isStale, formatDate, hasScore, rampColor } from '@/lib/scoring';
+import {
+  isStale,
+  formatDate,
+  hasScore,
+  rampColor,
+  dimensionGapReason,
+} from '@/lib/scoring';
 import {
   DIMENSION_LABELS,
   DIMENSION_DESCRIPTIONS,
@@ -214,6 +220,11 @@ export default async function LaunchpadDetailPage({
                   weight={DIMENSION_WEIGHTS[key]}
                   description={DIMENSION_DESCRIPTIONS[key]}
                   basis={DIMENSION_BASIS[key]}
+                  reason={
+                    lp.score.dimensions[key] === null
+                      ? dimensionGapReason(key, lp.launches)
+                      : null
+                  }
                   delay={i * 0.05}
                 />
               ))}
@@ -314,6 +325,14 @@ export default async function LaunchpadDetailPage({
           }
         >
           <div className="night-surface">
+            <p className="mb-3 text-[12px] text-faint">
+              Every launch we know about. Rows marked{' '}
+              <span className="rounded-full border border-dashed border-line px-1.5 py-0.5 text-[10.5px]">
+                Not sampled
+              </span>{' '}
+              are known but not counted toward the score above only the active
+              sample is.
+            </p>
             <LaunchesTable launches={lp.launches} launchpadSlug={lp.slug} />
           </div>
         </SectionPanel>

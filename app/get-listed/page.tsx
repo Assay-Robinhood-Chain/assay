@@ -47,7 +47,7 @@ const PROCESS_STEPS: {
   {
     icon: 'review',
     title: 'Peer review',
-    blurb: 'A human moderator checks it — never the score.',
+    blurb: 'A human moderator checks it never the score.',
   },
   {
     icon: 'checkCircle',

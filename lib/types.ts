@@ -40,6 +40,10 @@ export interface Launch {
   liquidityUsd: number | null;
   volume24hUsd: number | null;
   washTradingFlag: boolean;
+  excludedFromSample: boolean; // true = known but not counted toward the score
+  metricsFetchedAt: string | null; // null = liquidity/volume not checked yet
+  isContractVerified: boolean | null; // null = not checked yet
+  peakCheckedAt: string | null; // null = Mobula never asked for price history
 }
 
 export interface ScoreHistoryPoint {

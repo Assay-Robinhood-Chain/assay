@@ -89,7 +89,7 @@ export default async function RankingsPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
           Every launchpad Assay tracks on {TARGET_CHAIN}, sorted by final score.
-          Filters run entirely client-side against data already fetched —
+          Filters run entirely client-side against data already fetched 
           nothing here triggers a new request.
         </p>
       </Reveal>

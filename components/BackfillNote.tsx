@@ -51,16 +51,16 @@ export default function BackfillNote({
       <p className="mt-2 text-[12px] leading-relaxed text-faint">
         {isFullyCovered ? (
           <>
-            Every launch this launchpad has ever produced is tracked — under the{' '}
-            {MIN_BACKFILL_FULL_THRESHOLD}-launch full-sample threshold.
+            Every launch this launchpad has ever produced is tracked under the{' '}
+            {MIN_BACKFILL_FULL_THRESHOLD}-launch full sample threshold.
           </>
         ) : (
           <>
             Backfilled once at onboarding ({formatDate(onboardedAt)}): the{' '}
             {BACKFILL_SAMPLE_RATIO * 100}% most recent launches, capped at{' '}
-            {BACKFILL_SAMPLE_CAP.toLocaleString()} — it scales with the
+            {BACKFILL_SAMPLE_CAP.toLocaleString()}  it scales with the
             launchpad up to the cap. Launches since onboarding are tracked
-            in full via the hourly rotation — this is a one-time sizing rule,
+            in full via the hourly rotation this is a one-time sizing rule,
             not an ongoing sampling limit.
           </>
         )}

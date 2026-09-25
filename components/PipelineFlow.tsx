@@ -58,7 +58,7 @@ const STEPS: {
   {
     n: '01',
     title: 'Collectors',
-    desc: 'One adapter per source — Dexscreener, Blockscout, Bitquery/Mobula for documented launchpads, RPC watcher as fallback. Fetch, tag with data_source, push to queue.',
+    desc: 'One adapter per source Dexscreener, Blockscout, Bitquery/Mobula for documented launchpads, RPC watcher as fallback. Fetch, tag with data_source, push to queue.',
     icon: 'intake',
     accent: 'cobalt',
     offset: 0,
@@ -74,7 +74,7 @@ const STEPS: {
   {
     n: '03',
     title: 'Metrics Engine',
-    desc: 'Pure function over snapshot history — graduation status, wash-trading flag, holder concentration. Does not decide a score.',
+    desc: 'Pure function over snapshot history graduation status, wash-trading flag, holder concentration. Does not decide a score.',
     icon: 'gauge',
     accent: 'up',
     offset: 0,
@@ -90,7 +90,7 @@ const STEPS: {
   {
     n: '05',
     title: 'Web / API',
-    desc: 'Stateless, reads only from Postgres. Stays up even if every collector is down — serves stale-but-labeled data instead.',
+    desc: 'Stateless, reads only from Postgres. Stays up even if every collector is down serves stale-but-labeled data instead.',
     icon: 'server',
     accent: 'gold',
     offset: 0,

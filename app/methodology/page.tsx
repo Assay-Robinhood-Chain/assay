@@ -75,7 +75,7 @@ export default function MethodologyPage() {
         </h1>
         <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">
           Every scoring rule below is published, versioned, and implemented as a
-          deterministic formula — no learned model, no LLM in the loop, no
+          deterministic formula no learned model, no LLM in the loop, no
           non-reproducible step. Given the same inputs and the same{' '}
           <span className="font-mono text-[13px]">algorithm_version</span>, the
           Scorer always returns the same output.
@@ -103,7 +103,7 @@ export default function MethodologyPage() {
             <p className="mt-2 text-[13.5px] leading-relaxed text-[#b5b2a6]">
               The scoring tables carry no relationship to any billing or
               customer record. A launchpad paying for a report about itself
-              cannot touch its own final score — enforced at the schema level,
+              cannot touch its own final score enforced at the schema level,
               not by an internal policy someone could quietly waive.
             </p>
           </section>
@@ -129,7 +129,7 @@ export default function MethodologyPage() {
               Scoring only ever reads third-party market data and on-chain
               facts. Anything a launchpad submits about itself is a distinct
               data type that cannot satisfy the interface the Scorer reads from
-              — it cannot leak into a score by accident, only by someone
+              it cannot leak into a score by accident, only by someone
               deliberately changing the type.
             </p>
           </section>
@@ -200,7 +200,7 @@ export default function MethodologyPage() {
               <span className="font-mono text-[12px]">
                 {MIN_TOKEN_AGE_HOURS}
               </span>
-              h old — graduation and price outcomes need time to play out. A
+              h old graduation and price outcomes need time to play out. A
               composite also needs at least{' '}
               <span className="font-mono text-[12px]">
                 {MIN_DIMENSIONS_FOR_SCORE}
@@ -222,7 +222,7 @@ export default function MethodologyPage() {
               </strong>{' '}
               Value is measured on a log scale from the launch price (a token
               that never rose scores 0, 10× scores 100), and Consistency is
-              multiplied by how good the typical outcome is — a launchpad whose
+              multiplied by how good the typical outcome is a launchpad whose
               tokens all flatline is not rewarded for being predictable.
             </li>
             <li>
@@ -238,7 +238,7 @@ export default function MethodologyPage() {
           <p className="mt-5 text-[12px] leading-relaxed text-[#6e6c63]">
             Note on dimension count: this document uses five dimensions rather
             than the four referenced in an earlier product brief. Whether to
-            collapse two of the five is an open decision — treat this table as
+            collapse two of the five is an open decision treat this table as
             current truth until it's resolved.
           </p>
         </section>
@@ -282,7 +282,7 @@ export default function MethodologyPage() {
           </div>
           <p className="mt-4 text-[12.5px] leading-relaxed text-[#b5b2a6]">
             The same three thresholds define the red/amber/green colour ramp
-            used everywhere a dimension score is shown — colour and stars never
+            used everywhere a dimension score is shown colour and stars never
             drift apart.
           </p>
         </section>
@@ -308,13 +308,13 @@ export default function MethodologyPage() {
               {MIN_SAMPLE_SIZE_FOR_CONFIDENCE}
             </span>{' '}
             launches is marked{' '}
-            <span className="font-mono text-[13px]">is_provisional</span> and
+            <span className="font-mono text-[13px]">is provisional</span> and
             its star rating is capped at{' '}
             <span className="font-mono text-[13px]">
               {PROVISIONAL_STAR_CAP}
             </span>{' '}
             regardless of the raw composite score. This is enforced inside the
-            scoring function itself, not as a frontend warning layered on top —
+            scoring function itself, not as a frontend warning layered on top
             there is no configuration flag that disables it.
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-[#b5b2a6]">
@@ -341,7 +341,7 @@ export default function MethodologyPage() {
           </h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-[#b5b2a6]">
             When a launchpad is first onboarded, Assay decides how many
-            historical launches to pull in with a single, one-time rule —
+            historical launches to pull in with a single, one-time rule
             separate from the hourly ingestion rotation that runs for launchpads
             already tracked.
           </p>
@@ -352,7 +352,7 @@ export default function MethodologyPage() {
                 Floor at {MIN_BACKFILL_FULL_THRESHOLD}:
               </strong>{' '}
               below this many total launches, sampling isn't worth the
-              complexity — take everything. This is a different concern from the{' '}
+              complexity take everything. This is a different concern from the{' '}
               {MIN_SAMPLE_SIZE_FOR_CONFIDENCE}-launch confidence gate above; a
               launchpad can be cheap to backfill in full and still end up
               provisional.
@@ -362,7 +362,7 @@ export default function MethodologyPage() {
                 {BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at{' '}
                 {BACKFILL_SAMPLE_CAP.toLocaleString()}:
               </strong>{' '}
-              the sample scales with the launchpad up to the cap — a launchpad
+              the sample scales with the launchpad up to the cap a launchpad
               with 500 total launches backfills 100, one with 5,000 backfills
               1,000, and one with 276,000 also backfills 1,000. The cap keeps a
               very large launchpad from exhausting the upstream data APIs; at
@@ -373,7 +373,7 @@ export default function MethodologyPage() {
               <strong className="text-[#f3f1ea]">
                 Recent-first, not random:
               </strong>{' '}
-              consistent with the scoring engine's own recency weighting — a
+              consistent with the scoring engine's own recency weighting a
               fresh dossier opens with a launchpad's most current behaviour, and
               needs no separate argument for why old and new launches would
               otherwise be interchangeable.
@@ -384,7 +384,7 @@ export default function MethodologyPage() {
               </strong>{' '}
               After backfill, a launchpad's sampled launches enter the normal
               hourly rotation, and any launch published after onboarding is
-              picked up through the existing new-launch fast path — never
+              picked up through the existing new-launch fast path never
               through this rule again, unless the launchpad is manually
               re-onboarded.
             </li>
@@ -399,7 +399,7 @@ export default function MethodologyPage() {
 
           <p className="mt-4 text-[12px] leading-relaxed text-[#6e6c63]">
             A launchpad's dossier always shows both its sampled and
-            upstream-total counts side by side — a partial sample never silently
+            upstream-total counts side by side a partial sample never silently
             presents itself as the whole population.
           </p>
         </section>

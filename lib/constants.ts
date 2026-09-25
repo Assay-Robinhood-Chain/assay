@@ -61,7 +61,7 @@ export const DEFAULT_PAGE_LIMIT = 50;
 // on every response carrying a final_score, per the brief. The frontend
 // merely renders what the API already attached — it does not compose it.
 export const SCORE_DISCLAIMER =
-  'Scores are informational only and do not constitute financial, investment, or legal advice. Assay is not a registered investment adviser. Scores describe historical, on-chain patterns — not predictions about any specific future token. Conduct independent research before making any decision.';
+  'Scores are informational only and do not constitute financial, investment, or legal advice. Assay is not a registered investment adviser. Scores describe historical, on-chain patterns not predictions about any specific future token. Conduct independent research before making any decision.';
 
 export const DIMENSION_LABELS = {
   quality: 'Quality',
@@ -104,9 +104,9 @@ export const DIMENSION_BASIS: Record<keyof typeof DIMENSION_LABELS, string> = {
   mechanism:
     'Measured today: share of token contracts verified on Blockscout, capped at one third of the scale until audit and LP-lock data are wired in.',
   marketHealth:
-    'Measured today: liquidity depth across all checked tokens (DEX pool via Dexscreener, or bonding-curve reserves via Mobula) — a token with neither counts as zero. Volume, wash-trading and holder-concentration are not wired in yet.',
+    'Measured today: liquidity depth across all checked tokens (DEX pool via Dexscreener, or bonding-curve reserves via Mobula) a token with neither counts as zero. Volume, wash-trading and holder-concentration are not wired in yet.',
   value:
-    'Measured today: median peak-vs-launch multiple of tokens at least 72h old (Mobula price candles), on a log scale — a token that never rose above its launch price scores 0, 10× scores 100.',
+    'Measured today: median peak-vs-launch multiple of tokens at least 72h old (Mobula price candles), on a log scale a token that never rose above its launch price scores 0, 10× scores 100.',
   consistency:
-    'Measured today: how tightly peak multiples cluster, multiplied by how good the typical outcome is — tokens that all flatline do not count as consistent.',
+    'Measured today: how tightly peak multiples cluster, multiplied by how good the typical outcome is tokens that all flatline do not count as consistent.',
 };
