@@ -64,6 +64,23 @@ const RAMP_ACCENT: Record<'green' | 'amber' | 'red', Accent> = {
   red: 'down',
 };
 
+/** Unified brand-yellow accent for the section panels below (Score
+ * breakdown, Sample & onboarding, Score history, Active badges, Tracked
+ * launches) — these are purely decorative, unlike the header card above
+ * whose color reflects the launchpad's actual score ramp (green/amber/red)
+ * and must keep its own meaning. */
+const DECOR_ACCENT: {
+  text: string;
+  border: string;
+  glow: string;
+  bar: string;
+} = {
+  text: 'text-[#e8e402]',
+  border: 'hover:border-[#e8e402]/50',
+  glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+  bar: 'bg-[#e8e402]',
+};
+
 export async function generateStaticParams() {
   return (await getLaunchpads()).map((lp) => ({ slug: lp.slug }));
 }
@@ -184,7 +201,7 @@ export default async function LaunchpadDetailPage({
         {/* Dimension breakdown */}
         <Reveal delay={0.05}>
           <SectionPanel
-            accent={ACCENT.cobalt}
+            accent={DECOR_ACCENT}
             icon="bars"
             title="Score breakdown"
           >
@@ -207,7 +224,7 @@ export default async function LaunchpadDetailPage({
         {/* Backfill + meta */}
         <Reveal delay={0.1} className="lg:mt-6">
           <SectionPanel
-            accent={ACCENT.gold}
+            accent={DECOR_ACCENT}
             icon="archive"
             title="Sample & onboarding"
             className="flex h-full flex-col gap-5"
@@ -243,7 +260,11 @@ export default async function LaunchpadDetailPage({
 
       {/* Score history */}
       <Reveal delay={0.05} className="mt-8">
-        <SectionPanel accent={ACCENT.up} icon="timeline" title="Score history">
+        <SectionPanel
+          accent={DECOR_ACCENT}
+          icon="timeline"
+          title="Score history"
+        >
           <div className="night-surface">
             <ScoreHistoryChart points={lp.scoreHistory} />
           </div>
@@ -253,7 +274,11 @@ export default async function LaunchpadDetailPage({
       {/* Badges */}
       {lp.badges.length > 0 && (
         <Reveal delay={0.05} className="mt-8">
-          <SectionPanel accent={ACCENT.gold} icon="medal" title="Active badges">
+          <SectionPanel
+            accent={DECOR_ACCENT}
+            icon="medal"
+            title="Active badges"
+          >
             <div className="night-surface flex flex-wrap gap-3">
               {lp.badges.map((b, i) => (
                 <div
@@ -279,7 +304,7 @@ export default async function LaunchpadDetailPage({
       {/* Launches */}
       <Reveal delay={0.05} className="mt-8">
         <SectionPanel
-          accent={ACCENT.cobalt}
+          accent={DECOR_ACCENT}
           icon="list"
           title="Tracked launches"
           headerExtra={

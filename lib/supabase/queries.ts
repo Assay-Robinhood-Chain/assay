@@ -1,4 +1,5 @@
 import { createServerSupabaseClient, isSupabaseConfigured } from './server';
+import { shortAddress, formatUsd } from '@/lib/scoring';
 import {
   getLaunchpads as getMockLaunchpads,
   getLaunchpadBySlug as getMockLaunchpadBySlug,
@@ -312,4 +313,199 @@ export async function getLaunchBySlugAndAddress(
 
   const lp = await getLaunchpadBySlug(slug);
   return lp?.launches.find((l) => l.tokenAddress === tokenAddress);
+}
+
+export interface CronJobStatus {
+  jobName: string;
+  schedule: string;
+  lastRunStartedAt: string | null;
+  lastRunFinishedAt: string | null;
+  lastRunStatus: string | null;
+}
+
+interface CronJobStatusRow {
+  jobname: string;
+  schedule: string;
+  last_run_started_at: string | null;
+  last_run_finished_at: string | null;
+  last_run_status: string | null;
+}
+
+/** Real pg_cron status for the ingestion-rotation and scoring-sweep jobs
+ * (used by app/coverage/page.tsx), read through the
+ * public.get_cron_status() SECURITY DEFINER function — see
+ * supabase/migrations/0015_cron_status.sql. The `cron` schema itself is
+ * never queried directly from the app (PostgREST doesn't expose it, and
+ * anon has no grants there either way).
+ *
+ * Returns [] — never mock/fabricated data — when Supabase isn't
+ * configured or the RPC fails, so the Coverage page can fall back to a
+ * schedule-only display rather than inventing a "last run" time. */
+export async function getCronStatus(): Promise<CronJobStatus[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc('get_cron_status');
+
+  if (error || !data) {
+    console.error('getCronStatus() failed:', error?.message);
+    return [];
+  }
+
+  return (data as CronJobStatusRow[]).map((row) => ({
+    jobName: row.jobname,
+    schedule: row.schedule,
+    lastRunStartedAt: row.last_run_started_at,
+    lastRunFinishedAt: row.last_run_finished_at,
+    lastRunStatus: row.last_run_status,
+  }));
+}
+
+export type ActivityEventType = 'discovery' | 'metrics_sync' | 'score_sweep';
+
+export interface ActivityEvent {
+  id: string;
+  type: ActivityEventType;
+  timestamp: string;
+  launchpadName: string;
+  launchpadSlug: string;
+  detail: string;
+}
+
+/** Real recent-activity feed for the Coverage page's "Live feed" panel —
+ * this replaces what used to be a client-side `Math.random()` simulation.
+ * There's no discrete event-log table (see supabase/migrations/*.sql: no
+ * `ingestion_events` or similar), so this reconstructs activity from the
+ * timestamped rows that already exist: newly-inserted launches
+ * ("discovery"), newly-inserted metric snapshots ("metrics_sync"), and
+ * newly-computed scores ("score_sweep") — merged and sorted by their real
+ * timestamp. No "+NNms" latency or [VERIFY] step is shown because nothing
+ * in the schema records those; fabricating them was exactly the problem
+ * with the old version.
+ *
+ * Returns [] — never mock data — when Supabase isn't configured or a
+ * query fails, matching getCronStatus(). */
+export async function getRecentActivity(limit = 40): Promise<ActivityEvent[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createServerSupabaseClient();
+  const perStream = Math.max(limit, 15);
+
+  const [lpRes, launchRes, snapshotRes, scoreRes] = await Promise.all([
+    supabase.from('launchpads').select('id, slug, name'),
+    supabase
+      .from('launches')
+      .select('id, launchpad_id, token_address, name, symbol, created_at')
+      .order('created_at', { ascending: false })
+      .limit(perStream),
+    supabase
+      .from('launch_metrics_snapshot')
+      .select(
+        'launch_id, snapshot_at, liquidity_usd, volume_24h_usd, data_source',
+      )
+      .order('snapshot_at', { ascending: false })
+      .limit(perStream),
+    supabase
+      .from('launchpad_scores')
+      .select('launchpad_id, created_at, algorithm_version, final_score')
+      .order('created_at', { ascending: false })
+      .limit(perStream),
+  ]);
+
+  if (lpRes.error || !lpRes.data) {
+    console.error('getRecentActivity() failed:', lpRes.error?.message);
+    return [];
+  }
+
+  const lpById = new Map(
+    lpRes.data.map((lp) => [
+      lp.id as string,
+      lp as { slug: string; name: string },
+    ]),
+  );
+
+  interface LaunchRow {
+    id: string;
+    launchpad_id: string;
+    token_address: string;
+    name: string;
+    symbol: string;
+    created_at: string;
+  }
+  const launchById = new Map<string, LaunchRow>(
+    !launchRes.error && launchRes.data
+      ? (launchRes.data as LaunchRow[]).map((l) => [l.id, l])
+      : [],
+  );
+
+  const events: ActivityEvent[] = [];
+
+  if (!launchRes.error && launchRes.data) {
+    for (const l of launchRes.data as LaunchRow[]) {
+      const lp = lpById.get(l.launchpad_id);
+      if (!lp) continue;
+      events.push({
+        id: `discovery-${l.id}`,
+        type: 'discovery',
+        timestamp: l.created_at,
+        launchpadName: lp.name,
+        launchpadSlug: lp.slug,
+        detail: `New launch decoded${l.symbol ? ` · ${l.symbol}` : ''} · ${shortAddress(l.token_address)}`,
+      });
+    }
+  }
+
+  if (!snapshotRes.error && snapshotRes.data) {
+    interface SnapshotRow {
+      launch_id: string;
+      snapshot_at: string;
+      liquidity_usd: number | null;
+      volume_24h_usd: number | null;
+      data_source: string;
+    }
+    for (const s of snapshotRes.data as SnapshotRow[]) {
+      const l = launchById.get(s.launch_id);
+      const lp = l && lpById.get(l.launchpad_id);
+      if (!l || !lp) continue;
+      const amount = s.liquidity_usd ?? s.volume_24h_usd;
+      events.push({
+        id: `snapshot-${l.id}-${s.snapshot_at}`,
+        type: 'metrics_sync',
+        timestamp: s.snapshot_at,
+        launchpadName: lp.name,
+        launchpadSlug: lp.slug,
+        detail: `Liquidity/volume snapshot updated${
+          amount != null ? ` · ${formatUsd(amount)}` : ''
+        } · via ${s.data_source}`,
+      });
+    }
+  }
+
+  if (!scoreRes.error && scoreRes.data) {
+    interface ScoreRowActivity {
+      launchpad_id: string;
+      created_at: string;
+      algorithm_version: string;
+      final_score: number;
+    }
+    for (const s of scoreRes.data as ScoreRowActivity[]) {
+      const lp = lpById.get(s.launchpad_id);
+      if (!lp) continue;
+      events.push({
+        id: `score-${s.launchpad_id}-${s.created_at}`,
+        type: 'score_sweep',
+        timestamp: s.created_at,
+        launchpadName: lp.name,
+        launchpadSlug: lp.slug,
+        detail: `Composite recomputed · ${s.final_score.toFixed(1)} · algorithm_version ${s.algorithm_version}`,
+      });
+    }
+  }
+
+  return events
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    )
+    .slice(0, limit);
 }

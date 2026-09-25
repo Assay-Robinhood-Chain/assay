@@ -18,7 +18,7 @@ import { PageIcon, type PageIconKind } from '@/components/icons/PageIcon';
 /** Same accent treatment as Coverage/Rankings/the homepage's top-ranked
  * cards: fixed dark card (bg-[#141413]) regardless of site theme, a border +
  * glow tint on hover, and a top bar that wipes in. */
-type Accent = 'cobalt' | 'up' | 'gold' | 'down';
+type Accent = 'cobalt' | 'up' | 'gold' | 'down' | 'yellow';
 const ACCENT: Record<Accent, { border: string; glow: string; bar: string }> = {
   cobalt: {
     border: 'hover:border-cobalt/50',
@@ -40,6 +40,14 @@ const ACCENT: Record<Accent, { border: string; glow: string; bar: string }> = {
     glow: 'hover:shadow-[0_14px_36px_-16px_var(--down)]',
     bar: 'bg-down',
   },
+  /** Unified brand-yellow accent for purely decorative uses (the stat
+   * strip, "Status & flags" panel) — distinct from cobalt/up/gold/down
+   * above, which stay semantic (rug/graduated/active status). */
+  yellow: {
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
+  },
 };
 
 const CELL_GLOW: Record<Accent, string> = {
@@ -47,6 +55,7 @@ const CELL_GLOW: Record<Accent, string> = {
   up: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
   gold: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
   down: 'hover:shadow-[0_18px_40px_-20px_var(--down)]',
+  yellow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
 };
 
 export async function generateStaticParams() {
@@ -140,22 +149,22 @@ export default async function TokenDetailPage({
             {
               label: 'Peak multiple',
               value: formatMultiple(launch.peakMultiple),
-              accent: 'cobalt' as Accent,
+              accent: 'yellow' as Accent,
             },
             {
               label: 'Liquidity',
               value: formatUsd(launch.liquidityUsd),
-              accent: 'up' as Accent,
+              accent: 'yellow' as Accent,
             },
             {
               label: '24h volume',
               value: formatUsd(launch.volume24hUsd),
-              accent: 'gold' as Accent,
+              accent: 'yellow' as Accent,
             },
             {
               label: 'Launched',
               value: formatDate(launch.launchDate),
-              accent: 'cobalt' as Accent,
+              accent: 'yellow' as Accent,
             },
           ] as const
         ).map((s, i) => (
@@ -167,7 +176,7 @@ export default async function TokenDetailPage({
 
       {/* Status & flags */}
       <Reveal delay={0.25} className="mt-6">
-        <SectionPanel accent={ACCENT.gold} icon="flag" title="Status & flags">
+        <SectionPanel accent={ACCENT.yellow} icon="flag" title="Status & flags">
           <dl className="night-surface divide-y divide-line-soft text-[13px]">
             <KvRow k="DEX graduation">
               {launch.isGraduated ? 'Graduated' : 'Not yet graduated'}

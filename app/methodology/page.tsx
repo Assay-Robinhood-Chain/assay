@@ -21,29 +21,26 @@ import {
 import { DimensionKey } from '@/lib/types';
 
 /** Same accent treatment as the homepage's "method" / "How Assay works"
- * cards — border tint + glow shadow on hover, plus a top bar that wipes
- * in on hover. */
-type Accent = 'cobalt' | 'up' | 'gold' | 'down';
+ * cards — border tint + glow shadow on hover, unified to the brand
+ * yellow (#e8e402) across every card, plus a top bar that wipes in on
+ * hover. (The inner 0-1★/1★/2★/3★ threshold ramp is the one exception —
+ * it keeps its own red/amber/green colours via THRESHOLD_ACCENT below.) */
+type Accent = 'cobalt' | 'up' | 'gold';
 const ACCENT: Record<Accent, { border: string; glow: string; bar: string }> = {
   cobalt: {
-    border: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
-    border: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
-    bar: 'bg-up',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
-    border: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
-    bar: 'bg-gold',
-  },
-  down: {
-    border: 'hover:border-down/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--down)]',
-    bar: 'bg-down',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
 };
 
@@ -95,7 +92,7 @@ export default function MethodologyPage() {
               className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
             />
             <div className="mb-3 flex items-center gap-3">
-              <span className="pipeline-badge pipeline-badge-cobalt grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+              <span className="weight-pill grid h-9 w-9 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
                 <PageIcon kind="shield" size={17} />
               </span>
 
@@ -120,7 +117,7 @@ export default function MethodologyPage() {
               className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.up.bar}`}
             />
             <div className="mb-3 flex items-center gap-3">
-              <div className="pipeline-badge pipeline-badge-up grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+              <div className="weight-pill grid h-9 w-9 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
                 <PageIcon kind="shieldCheck" size={17} />
               </div>
 
@@ -149,7 +146,7 @@ export default function MethodologyPage() {
           />
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="flex items-center gap-2.5 text-lg font-bold text-[#f3f1ea]">
-              <span className="pipeline-badge pipeline-badge-cobalt grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110"></span>
+              <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110"></span>
               Composite Weighting
             </h2>
           </div>
@@ -256,7 +253,7 @@ export default function MethodologyPage() {
             className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.gold.bar}`}
           />
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-[#f3f1ea]">
-            <span className="pipeline-badge pipeline-badge-gold grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+            <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
               <PageIcon kind="tiers" size={15} />
             </span>
             Star thresholds
@@ -300,7 +297,7 @@ export default function MethodologyPage() {
             className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
           />
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-[#f3f1ea]">
-            <span className="pipeline-badge pipeline-badge-cobalt grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+            <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
               <PageIcon kind="hourglass" size={15} />
             </span>
             Cold-start honesty
@@ -337,7 +334,7 @@ export default function MethodologyPage() {
             className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${ACCENT.cobalt.bar}`}
           />
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-[#f3f1ea]">
-            <span className="pipeline-badge pipeline-badge-cobalt grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+            <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
               <PageIcon kind="stack" size={15} />
             </span>
             Initial backfill sampling
@@ -417,6 +414,30 @@ export default function MethodologyPage() {
   );
 }
 
+/** Local accent for the 0-1★/1★/2★/3★ threshold ramp only — kept as its
+ * own red/amber/green scale, independent from the unified yellow ACCENT
+ * used by the rest of the page's hover states. */
+const THRESHOLD_ACCENT: Record<
+  'up' | 'gold' | 'down',
+  { border: string; glow: string; bar: string }
+> = {
+  up: {
+    border: 'hover:border-up/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
+    bar: 'bg-up',
+  },
+  gold: {
+    border: 'hover:border-gold/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
+    bar: 'bg-gold',
+  },
+  down: {
+    border: 'hover:border-down/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_var(--down)]',
+    bar: 'bg-down',
+  },
+};
+
 function ThresholdCell({
   label,
   range,
@@ -431,7 +452,7 @@ function ThresholdCell({
     gold: 'bg-gold-soft text-gold',
     down: 'bg-down-soft text-down',
   }[tone];
-  const accent = ACCENT[tone];
+  const accent = THRESHOLD_ACCENT[tone];
   return (
     <div
       className={`group relative overflow-hidden rounded-lg border border-transparent px-2 py-3 transition-all duration-300 ease-out hover:-translate-y-1 ${cls} ${accent.border} ${accent.glow}`}

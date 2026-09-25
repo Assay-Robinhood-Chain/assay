@@ -6,7 +6,11 @@ import CoverageTable from '@/components/CoverageTable';
 import LiveFeed from '@/components/LiveFeed';
 import CronStatus from '@/components/CronStatus';
 import StatsRow from '@/components/StatsRow';
-import { getLaunchpads } from '@/lib/supabase/queries';
+import {
+  getLaunchpads,
+  getCronStatus,
+  getRecentActivity,
+} from '@/lib/supabase/queries';
 import { buildCoverageRows, COLLECTORS } from '@/lib/coverage';
 import {
   MIN_BACKFILL_FULL_THRESHOLD,
@@ -15,8 +19,8 @@ import {
 } from '@/lib/constants';
 
 /** Same accent treatment as the homepage's "method" / "How Assay works"
- * cards — border tint + glow shadow on hover, plus a top bar that wipes
- * in — cycled per card so neighbours never repeat the same accent. */
+ * cards — border tint + glow shadow on hover, unified to the brand
+ * yellow (#e8e402) across every card, plus a top bar that wipes in. */
 type Accent = 'cobalt' | 'up' | 'gold';
 const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
 const ACCENT: Record<
@@ -24,22 +28,22 @@ const ACCENT: Record<
   { text: string; border: string; glow: string; bar: string }
 > = {
   cobalt: {
-    text: 'text-cobalt',
-    border: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    text: 'text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
-    text: 'text-up',
-    border: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
-    bar: 'bg-up',
+    text: 'text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
-    text: 'text-gold',
-    border: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
-    bar: 'bg-gold',
+    text: 'text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
 };
 
@@ -50,7 +54,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CoveragePage() {
-  const launchpads = await getLaunchpads();
+  const [launchpads, cronJobs, recentActivity] = await Promise.all([
+    getLaunchpads(),
+    getCronStatus(),
+    getRecentActivity(40),
+  ]);
   const rows = buildCoverageRows(launchpads);
   const totalTracked = launchpads.reduce((sum, lp) => sum + lp.sampleSize, 0);
   const onlineCollectors = COLLECTORS.filter(
@@ -150,7 +158,7 @@ export default async function CoveragePage() {
           <h2 className="flow-title-pill mb-3 inline-block rounded-full border px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wide">
             Cronjob status
           </h2>
-          <CronStatus />
+          <CronStatus jobs={cronJobs} />
         </section>
       </Reveal>
 
@@ -218,10 +226,10 @@ export default async function CoveragePage() {
               Live feed
             </h2>
             <span className="font-mono text-[11px] text-[#6e6c63]">
-              simulated — for illustration
+              recent activity — real
             </span>
           </div>
-          <LiveFeed launchpads={launchpads} />
+          <LiveFeed events={recentActivity} />
         </section>
       </Reveal>
     </div>
@@ -231,9 +239,9 @@ export default async function CoveragePage() {
 /** Card-level hover glow, matching ActiveCollectors' reference intensity
  * (stronger than the big panel wrappers' softer ACCENT.glow above). */
 const CARD_GLOW: Record<Accent, string> = {
-  cobalt: 'hover:shadow-[0_18px_40px_-20px_var(--cobalt)]',
-  up: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
-  gold: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
+  cobalt: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+  up: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+  gold: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
 };
 
 function FlowStep({
