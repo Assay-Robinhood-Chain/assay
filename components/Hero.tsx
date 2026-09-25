@@ -62,8 +62,8 @@ export default function Hero() {
           >
             <br />
             Assay looks at the right numbers. Every score is built from what the
-            chain itself will admit to — never from what a launchpad says about
-            itself — and republished before the ink on yesterday&apos;s is dry.
+            chain itself will admit to never from what a launchpad says about
+            itself and republished before the ink on yesterday&apos;s is dry.
           </motion.p>
 
           <motion.div

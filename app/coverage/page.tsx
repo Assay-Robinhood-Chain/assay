@@ -76,7 +76,7 @@ export default async function CoveragePage() {
         </h1>
         <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
           A visible gap is credible; a guess presented as coverage is not. This
-          is the exact pipeline every launchpad below moves through — from
+          is the exact pipeline every launchpad below moves through from
           onboarding, to the one-time backfill, to the ongoing cronjob that
           keeps every score current.
         </p>
@@ -106,7 +106,7 @@ export default async function CoveragePage() {
               tone={ACCENT_ORDER[1]}
               accent={ACCENT[ACCENT_ORDER[1]]}
               title="Tokens discovered"
-              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} — most-recent-first.`}
+              desc={`Backfilled once: everything under ${MIN_BACKFILL_FULL_THRESHOLD} launches, else ${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()} most-recent-first.`}
             />
             <FlowStep
               n="3"
@@ -120,7 +120,7 @@ export default async function CoveragePage() {
               tone={ACCENT_ORDER[0]}
               accent={ACCENT[ACCENT_ORDER[0]]}
               title="Kept current"
-              desc="Hourly ingestion rotation + a daily scoring sweep — no manual step re-runs this."
+              desc="Hourly ingestion rotation + a daily scoring sweep no manual step re-runs this."
             />
           </div>
         </section>
@@ -206,7 +206,7 @@ export default async function CoveragePage() {
           <CoverageTable rows={rows} />
           <p className="mt-3 text-[12px] leading-relaxed text-[#6e6c63]">
             Confidence floor here is a coarse, display-only read on sample size
-            — not the scoring engine's binary confidence gate (see Methodology).
+            not the scoring engine's binary confidence gate (see Methodology).
             A launchpad can be &ldquo;high&rdquo; coverage and still carry a low
             score.
           </p>

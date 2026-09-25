@@ -25,7 +25,7 @@ export default function LaunchesTable({
 
   const rows = useMemo(() => {
     const dir = sortDir;
-    return [...launches].sort((a, b) => {
+    const bySortKey = (a: Launch, b: Launch) => {
       switch (sortKey) {
         case 'peakMultiple':
           return dir * ((a.peakMultiple ?? -1) - (b.peakMultiple ?? -1));
@@ -40,6 +40,16 @@ export default function LaunchesTable({
               new Date(b.launchDate).getTime())
           );
       }
+    };
+    // Group first: launches counted toward the score always sit above
+    // ones that aren't, regardless of which column is sorted — so the
+    // rows that actually explain the score above are never buried under
+    // a long tail of excluded ones.
+    return [...launches].sort((a, b) => {
+      if (a.excludedFromSample !== b.excludedFromSample) {
+        return a.excludedFromSample ? 1 : -1;
+      }
+      return bySortKey(a, b);
     });
   }, [launches, sortKey, sortDir]);
 
@@ -95,7 +105,9 @@ export default function LaunchesTable({
                 if (e.key === 'Enter')
                   router.push(`/launchpad/${launchpadSlug}/${l.tokenAddress}`);
               }}
-              className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-panel/50 focus-visible:bg-panel/50"
+              className={`cursor-pointer border-b border-line-soft last:border-0 hover:bg-panel/50 focus-visible:bg-panel/50 ${
+                l.excludedFromSample ? 'opacity-50' : ''
+              }`}
             >
               <td className="px-4 py-2.5">
                 <div className="font-medium text-ink">
@@ -128,6 +140,9 @@ export default function LaunchesTable({
                   {l.washTradingFlag && (
                     <Flag tone="gold">Wash-trading flag</Flag>
                   )}
+                  {l.excludedFromSample && (
+                    <Flag tone="outline">Not sampled</Flag>
+                  )}
                 </div>
               </td>
               <td className="px-4 py-2.5 font-mono text-ink-soft">
@@ -151,7 +166,7 @@ function Flag({
   tone,
   children,
 }: {
-  tone: 'up' | 'down' | 'gold' | 'muted';
+  tone: 'up' | 'down' | 'gold' | 'muted' | 'outline';
   children: React.ReactNode;
 }) {
   const cls = {
@@ -159,6 +174,7 @@ function Flag({
     down: 'bg-down-soft text-down',
     gold: 'bg-gold-soft text-gold',
     muted: 'bg-line-soft text-muted',
+    outline: 'border border-dashed border-line text-faint',
   }[tone];
   return (
     <span

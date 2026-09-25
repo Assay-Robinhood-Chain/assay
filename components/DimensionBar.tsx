@@ -17,6 +17,7 @@ export default function DimensionBar({
   weight,
   description,
   basis,
+  reason,
   delay = 0,
 }: {
   label: string;
@@ -26,6 +27,9 @@ export default function DimensionBar({
   description?: string;
   /** What is actually being measured today (may be narrower than `description`). */
   basis?: string;
+  /** Only shown when value is null — e.g. "2 of 5 minimum sampled
+   * launches are ≥72h old with price history." */
+  reason?: string | null;
   delay?: number;
 }) {
   return (
@@ -60,6 +64,11 @@ export default function DimensionBar({
             transition={{ duration: 0.7, delay, ease: EASE }}
           />
         </div>
+      )}
+      {value === null && reason && (
+        <p className="mt-1.5 text-[12px] leading-relaxed text-gold">
+          Not enough data yet — {reason}
+        </p>
       )}
       {description && (
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">

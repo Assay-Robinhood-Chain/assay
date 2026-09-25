@@ -61,19 +61,19 @@ const ENGINES: {
     icon: 'telemetry',
     tag: 'Price, liquidity, volume',
     name: 'Dexscreener',
-    desc: 'Market-health telemetry — liquidity depth, 24h volume, and price history for every tracked launch, pulled the same way for every launchpad with no exceptions.',
+    desc: 'Market-health telemetry liquidity depth, 24h volume, and price history for every tracked launch, pulled the same way for every launchpad with no exceptions.',
   },
   {
     icon: 'contract',
     tag: 'Contract & holder data',
     name: 'Blockscout',
-    desc: "Contract verification status, LP-lock evidence, and top-10 holder concentration — read straight off the chain, never taken from a launchpad's own claims.",
+    desc: "Contract verification status, LP-lock evidence, and top-10 holder concentration read straight off the chain, never taken from a launchpad's own claims.",
   },
   {
     icon: 'discovery',
     tag: 'Launch discovery',
     name: 'Bitquery / Mobula',
-    desc: "Documented factory addresses for the highest-volume launchpads, so new launches are found from a third party's published record — not reverse-engineered from scratch every time.",
+    desc: "Documented factory addresses for the highest-volume launchpads, so new launches are found from a third party's published record not reverse-engineered from scratch every time.",
   },
 ];
 
@@ -97,7 +97,7 @@ const STEPS = [
   {
     n: '03',
     title: 'It gets scored',
-    desc: 'Five weighted dimensions — quality, mechanism, market health, value, consistency — composited into one number, gated by sample size before any star shows.',
+    desc: 'Five weighted dimensions quality, mechanism, market health, value, consistency composited into one number, gated by sample size before any star shows.',
   },
   {
     n: '04',
@@ -128,7 +128,7 @@ export default async function HomePage() {
               Its Twitter will tell you it's verified. Ask any ranking where its
               numbers came from, and the honest answer is often: the platform
               handed them over. Assay reads five dimensions off the chain
-              instead — nothing the launchpad said about itself.
+              instead nothing the launchpad said about itself.
             </p>
           </Reveal>
 
@@ -174,8 +174,7 @@ export default async function HomePage() {
             How Assay works
           </h2>
           <p className="mt-1 max-w-xl text-[13.5px] text-muted">
-            The same pipeline runs for every launchpad on {TARGET_CHAIN} —
-            nothing is scored by hand, and nothing skips a step.
+            The same pipeline runs for every launchpad on {TARGET_CHAIN} nothing is scored by hand, and nothing skips a step.
           </p>
         </Reveal>
 
@@ -351,7 +350,7 @@ export default async function HomePage() {
           <div className="grid gap-3 sm:grid-cols-3">
             <TrustItem
               title="Published methodology"
-              desc="Every threshold and weight is public and versioned — nothing scored by a black box."
+              desc="Every threshold and weight is public and versioned nothing scored by a black box."
             />
             <TrustItem
               title="No paid placement"
@@ -359,7 +358,7 @@ export default async function HomePage() {
             />
             <TrustItem
               title="Independent data only"
-              desc="Scores read on-chain facts and third-party market data — never a launchpad's claims about itself."
+              desc="Scores read on-chain facts and third-party market data never a launchpad's claims about itself."
             />
           </div>
         </Reveal>
@@ -390,7 +389,7 @@ export default async function HomePage() {
               Run a launchpad on {TARGET_CHAIN}?
             </div>
             <p className="mt-1 text-[13px] text-[#b5b2a6]">
-              Get listed, or submit a correction to an existing entry — reviewed
+              Get listed, or submit a correction to an existing entry reviewed
               by a human, never auto-published.
             </p>
           </div>

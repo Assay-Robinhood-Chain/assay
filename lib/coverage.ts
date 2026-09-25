@@ -48,7 +48,7 @@ export const COLLECTORS: Collector[] = [
   },
   {
     name: "Chain RPC watcher",
-    provides: "Self-indexed deploy/graduation events — the fallback with no third party in the loop",
+    provides: "Self-indexed deploy/graduation events the fallback with no third party in the loop",
     status: "online",
     role: "fallback",
   },
