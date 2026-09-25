@@ -25,37 +25,30 @@ const DIMENSION_KEYS = Object.keys(DIMENSION_LABELS) as DimensionKey[];
  * distributed so neighbouring cards never repeat the same one. */
 type Accent = 'cobalt' | 'up' | 'gold';
 const ACCENT_ORDER: Accent[] = ['cobalt', 'up', 'gold'];
+/* Hover accent (border/glow/bar) is unified to the brand yellow used by
+ * the pills across the site (#e8e402), instead of cycling per-card. */
 const ACCENT: Record<
   Accent,
-  { text: string; pill: string; border: string; glow: string; bar: string }
+  { text: string; border: string; glow: string; bar: string }
 > = {
   cobalt: {
     text: 'text-cobalt',
-    pill: 'bg-cobalt-soft text-cobalt',
-    border: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
     text: 'text-up',
-    pill: 'bg-up-soft text-up',
-    border: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
-    bar: 'bg-up',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
     text: 'text-gold',
-    pill: 'bg-gold-soft text-gold',
-    border: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
-    bar: 'bg-gold',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
-};
-
-const ENGINE_ACCENT: Record<'telemetry' | 'contract' | 'discovery', string> = {
-  telemetry: 'cobalt',
-  contract: 'gold',
-  discovery: 'up',
 };
 
 const ENGINES: {
@@ -163,9 +156,7 @@ export default async function HomePage() {
                         {DIMENSION_DESCRIPTIONS[key]}
                       </p>
                     </div>
-                    <span
-                      className={`mt-4 inline-block w-fit rounded-full px-2.5 py-1 font-mono text-[11px] transition-colors duration-300 ${accent.pill}`}
-                    >
+                    <span className="weight-pill mt-4 inline-block w-fit rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors duration-300">
                       Weight {(DIMENSION_WEIGHTS[key] * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -331,15 +322,13 @@ export default async function HomePage() {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {ENGINES.map((e, i) => (
               <Reveal key={e.name} delay={i * 0.07}>
-                <div className="dark-card group relative h-full overflow-hidden rounded-xl border bg-[#141413] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[#7a9cff]/40 hover:shadow-[0_16px_36px_-18px_rgba(122,156,255,0.35)]">
-                  <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl bg-[#7a9cff] transition-transform duration-300 group-hover:scale-x-100" />
+                <div className="dark-card group relative h-full overflow-hidden rounded-xl border bg-[#141413] p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[#e8e402]/50 hover:shadow-[0_16px_36px_-18px_#e8e402]">
+                  <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 rounded-t-xl bg-[#e8e402] transition-transform duration-300 group-hover:scale-x-100" />
                   <span className="inline-block rounded-full border border-[#302f2a] px-2.5 py-1 font-mono text-[10.5px] text-[#b5b2a6]">
                     {e.tag}
                   </span>
                   <div className="mt-3 flex items-center gap-2.5">
-                    <span
-                      className={`pipeline-badge pipeline-badge-${ENGINE_ACCENT[e.icon]} grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110`}
-                    >
+                    <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
                       <SourceIcon kind={e.icon} />
                     </span>
                     <h3 className="text-sm font-bold text-[#f3f1ea]">

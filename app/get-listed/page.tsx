@@ -15,22 +15,22 @@ const ACCENT: Record<
   { pill: string; border: string; glow: string; bar: string }
 > = {
   cobalt: {
-    pill: 'bg-cobalt-soft text-cobalt',
-    border: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    pill: 'bg-[#e8e402]/10 text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
-    pill: 'bg-up-soft text-up',
-    border: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
-    bar: 'bg-up',
+    pill: 'bg-[#e8e402]/10 text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
-    pill: 'bg-gold-soft text-gold',
-    border: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
-    bar: 'bg-gold',
+    pill: 'bg-[#e8e402]/10 text-[#e8e402]',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
 };
 
@@ -338,9 +338,7 @@ export default function SubmitPage() {
                 />
 
                 <div className="mb-3 flex items-center gap-3">
-                  <span
-                    className={`pipeline-badge pipeline-badge-${ACCENT_ORDER[i % ACCENT_ORDER.length]} grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110`}
-                  >
+                  <span className="weight-pill grid h-9 w-9 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover:scale-110">
                     <PageIcon kind={step.icon} size={16} />
                   </span>
 
@@ -399,10 +397,18 @@ export default function SubmitPage() {
                     reflected on the launchpad&apos;s page once verified.
                   </p>
 
-                  <p className="mx-auto mt-4 max-w-sm rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3 py-2.5 text-[12px] leading-relaxed text-[#6e6c63]">
-                    Please allow up to 1×24 hours for the review and for your
-                    data to be added.
-                  </p>
+                  <div className="mx-auto mt-4 flex max-w-sm items-center gap-3 rounded-lg border border-[#302f2a] bg-[#1c1b18] px-3.5 py-3 text-left">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e0b04d]/12 text-[#e0b04d]">
+                      <PageIcon kind="hourglass" size={15} />
+                    </span>
+                    <p className="text-[12.5px] leading-relaxed text-[#6e6c63]">
+                      Please allow up to{' '}
+                      <span className="font-mono text-[14px] font-bold text-[#e0b04d]">
+                        1×24 hours
+                      </span>{' '}
+                      for the review and for your data to be added.
+                    </p>
+                  </div>
 
                   <button
                     onClick={reset}

@@ -10,25 +10,25 @@ const ACCENT: Record<
   { text: string; badgeBg: string; ring: string; glow: string; bar: string }
 > = {
   cobalt: {
-    text: 'text-cobalt',
-    badgeBg: 'bg-cobalt-soft',
-    ring: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
-    text: 'text-gold',
-    badgeBg: 'bg-gold-soft',
-    ring: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
-    bar: 'bg-gold',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
-    text: 'text-up',
-    badgeBg: 'bg-up-soft',
-    ring: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
-    bar: 'bg-up',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   faint: {
     text: 'text-faint',
@@ -40,9 +40,9 @@ const ACCENT: Record<
 };
 
 const FLOW_BAR: Record<Accent, string> = {
-  cobalt: 'bg-cobalt',
-  gold: 'bg-gold',
-  up: 'bg-up',
+  cobalt: 'bg-[#e8e402]',
+  gold: 'bg-[#e8e402]',
+  up: 'bg-[#e8e402]',
   faint: 'bg-faint',
 };
 
@@ -69,7 +69,7 @@ const STEPS: {
     desc: "Maps each source's payload into the canonical snapshot row, resolves disagreements between sources, writes it, then triggers a recompute.",
     icon: 'merge',
     accent: 'gold',
-    offset: 14,
+    offset: 0,
   },
   {
     n: '03',
@@ -85,14 +85,14 @@ const STEPS: {
     desc: 'Deterministic composite formula across 5 dimensions. Reproducible: same inputs and algorithm_version, same output, every time.',
     icon: 'seal',
     accent: 'cobalt',
-    offset: 14,
+    offset: 0,
   },
   {
     n: '05',
     title: 'Web / API',
     desc: 'Stateless, reads only from Postgres. Stays up even if every collector is down — serves stale-but-labeled data instead.',
     icon: 'server',
-    accent: 'faint',
+    accent: 'gold',
     offset: 0,
   },
 ];
@@ -126,7 +126,7 @@ export default function PipelineFlow() {
                   </span>
                 </div>
                 <span
-                  className={`pipeline-badge pipeline-badge-${s.accent} hidden h-7 w-7 shrink-0 place-items-center rounded-md lg:grid`}
+                  className={`${s.accent === 'faint' ? 'pipeline-badge pipeline-badge-faint' : 'weight-pill border'} hidden h-7 w-7 shrink-0 place-items-center rounded-md lg:grid`}
                 >
                   <PipelineIcon kind={s.icon} />
                 </span>

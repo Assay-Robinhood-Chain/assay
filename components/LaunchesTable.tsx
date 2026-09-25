@@ -55,7 +55,7 @@ export default function LaunchesTable({
     <th className="px-4 py-2.5 text-left">
       <button
         onClick={() => toggleSort(key)}
-        className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-faint hover:text-ink"
+        className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-[#141413]"
       >
         {label}
         {sortKey === key && (
@@ -69,12 +69,12 @@ export default function LaunchesTable({
     <div className="overflow-x-auto rounded-xl border border-line">
       <table className="w-full min-w-[640px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-line bg-panel">
-            <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-faint">
+          <tr className="border-b border-[#141413] bg-[#e8e402]">
+            <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-[#141413]">
               Token
             </th>
             {th('launchDate', 'Launched')}
-            <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-faint">
+            <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-[#141413]">
               Status
             </th>
             {th('peakMultiple', 'Peak multiple')}

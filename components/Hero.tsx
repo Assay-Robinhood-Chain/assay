@@ -102,30 +102,14 @@ export default function Hero() {
           className="mx-auto hidden w-full max-w-[340px] lg:block lg:max-w-[420px]"
         >
           <div className="relative flex flex-col items-center rounded-[20px] border border-line bg-card px-7 py-8 text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)]">
-            <div className="relative mb-[18px] flex h-[140px] w-[140px] items-center justify-center">
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ duration: 28, ease: 'linear', repeat: Infinity }}
-                className="absolute inset-0 rounded-full border-2 border-dashed border-line"
+            <div className="relative mb-[18px] flex h-[280px] w-[280px] items-center justify-center">
+              <img
+                src="/hero.gif"
+                alt="Assay Audit Seal"
+                width={280}
+                height={280}
+                className="h-[220px] w-[220px] object-contain"
               />
-              <motion.span
-                animate={{ scale: [0.9, 1.3, 0.9], opacity: [0.7, 1, 0.7] }}
-                transition={{
-                  duration: 3,
-                  ease: 'easeInOut',
-                  repeat: Infinity,
-                }}
-                className="absolute left-5 top-3.5 h-2.5 w-2.5 rounded-full bg-cobalt shadow-[0_0_10px_var(--cobalt)]"
-              />
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-gold bg-[radial-gradient(circle,var(--gold-soft)_0%,transparent_70%)] shadow-[0_8px_24px_-6px_rgba(163,115,14,0.25)]">
-                <img
-                  src="/assay-seal-pixel.gif"
-                  alt="Assay Audit Seal"
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 object-contain"
-                />
-              </div>
             </div>
 
             <div className="mb-1 text-lg font-semibold tracking-tight text-ink">

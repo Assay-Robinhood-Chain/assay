@@ -7,25 +7,26 @@ import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
 import { hasScore } from '@/lib/scoring';
 
 /** Same accent treatment as the homepage's "method" dimension cards —
- * border tint + glow shadow on hover, plus a top bar that wipes in. */
+ * border tint + glow shadow on hover, unified to the brand yellow
+ * (#e8e402) across every card instead of cycling per-tone. */
 const ACCENT: Record<
   'cobalt' | 'up' | 'gold',
   { border: string; glow: string; bar: string }
 > = {
   cobalt: {
-    border: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--cobalt)]',
-    bar: 'bg-cobalt',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   up: {
-    border: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--up)]',
-    bar: 'bg-up',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
   gold: {
-    border: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_14px_36px_-16px_var(--gold)]',
-    bar: 'bg-gold',
+    border: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_14px_36px_-16px_#e8e402]',
+    bar: 'bg-[#e8e402]',
   },
 };
 
@@ -76,12 +77,6 @@ export default async function RankingsPage() {
     },
   ];
 
-  const toneCls = {
-    cobalt: 'bg-cobalt-soft text-cobalt',
-    up: 'bg-up-soft text-up',
-    gold: 'bg-gold-soft text-gold',
-  };
-
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
       <Reveal>
@@ -117,9 +112,7 @@ export default async function RankingsPage() {
                   className={`absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${accent.bar}`}
                 />
                 <div className="flex items-start gap-2">
-                  <div
-                    className={`icon-chip grid h-7 w-7 shrink-0 place-items-center rounded-lg ${toneCls[s.tone]}`}
-                  >
+                  <div className="weight-pill grid h-7 w-7 shrink-0 place-items-center rounded-lg border">
                     <PageIcon kind={s.icon} size={14} />
                   </div>
                   <div>

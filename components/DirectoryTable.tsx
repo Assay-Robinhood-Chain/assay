@@ -161,10 +161,10 @@ export default function DirectoryTable({
                 >
                   <Link
                     href={`/launchpad/${lp.slug}`}
-                    className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] items-center gap-4 border-b border-[#262620] px-5 py-3.5 last:border-0 hover:bg-white/5"
+                    className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] items-center gap-4 border-b border-[#4a4740] px-5 py-3.5 last:border-0 hover:bg-white/5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#6e6c63]">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#a3a099]">
                         {lp.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -178,7 +178,7 @@ export default function DirectoryTable({
                             </span>
                           )}
                         </div>
-                        <span className="truncate font-mono text-[11px] text-[#6e6c63]">
+                        <span className="truncate font-mono text-[11px] text-[#a3a099]">
                           {lp.sampleSize.toLocaleString()} of{' '}
                           {lp.totalLaunchesUpstream?.toLocaleString() ?? '—'}{' '}
                           launches tracked
@@ -198,7 +198,7 @@ export default function DirectoryTable({
                       >
                         {lp.score.finalScore.toFixed(1)}
                       </span>
-                      <span className="font-mono text-[11px] text-[#6e6c63]">
+                      <span className="font-mono text-[11px] text-[#a3a099]">
                         {'★'.repeat(lp.score.stars)}
                       </span>
                     </div>
@@ -206,7 +206,7 @@ export default function DirectoryTable({
                     <DimCell value={lp.score.dimensions.quality} />
                     <DimCell value={lp.score.dimensions.marketHealth} />
 
-                    <span className="font-mono text-[12.5px] text-[#b5b2a6]">
+                    <span className="font-mono text-[12.5px] text-[#e2dfd3]">
                       {lp.sampleSize}
                     </span>
                   </Link>
@@ -288,8 +288,8 @@ function DimCell({ value }: { value: number | null }) {
   if (value === null) {
     return (
       <div className="flex items-center gap-2" title="Not enough data yet">
-        <div className="h-1.5 w-full rounded-full border border-dashed border-[#3a3733]" />
-        <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#6e6c63]">
+        <div className="h-1.5 w-full rounded-full border border-dashed border-[#4a4740]" />
+        <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#a3a099]">
           n/a
         </span>
       </div>
@@ -298,13 +298,13 @@ function DimCell({ value }: { value: number | null }) {
   const color = rampColor(value);
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#2a2a26]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#3a3931]">
         <div
           className={`h-full rounded-full ${RAMP_BG[color]}`}
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#6e6c63]">
+      <span className="w-6 shrink-0 text-right font-mono text-[11px] text-[#b8b5a9]">
         {value.toFixed(0)}
       </span>
     </div>

@@ -18,28 +18,28 @@ const ACCENT: Record<
   }
 > = {
   cobalt: {
-    text: 'text-cobalt',
-    badgeBg: 'bg-cobalt-soft',
-    ring: 'hover:border-cobalt/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--cobalt)]',
-    bar: 'bg-cobalt',
-    tagBorder: 'border-cobalt/25',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
+    tagBorder: 'border-[#e8e402]/25',
   },
   gold: {
-    text: 'text-gold',
-    badgeBg: 'bg-gold-soft',
-    ring: 'hover:border-gold/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--gold)]',
-    bar: 'bg-gold',
-    tagBorder: 'border-gold/25',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
+    tagBorder: 'border-[#e8e402]/25',
   },
   up: {
-    text: 'text-up',
-    badgeBg: 'bg-up-soft',
-    ring: 'hover:border-up/50',
-    glow: 'hover:shadow-[0_18px_40px_-20px_var(--up)]',
-    bar: 'bg-up',
-    tagBorder: 'border-up/25',
+    text: 'text-[#e8e402]',
+    badgeBg: 'bg-[#e8e402]/10',
+    ring: 'hover:border-[#e8e402]/50',
+    glow: 'hover:shadow-[0_18px_40px_-20px_#e8e402]',
+    bar: 'bg-[#e8e402]',
+    tagBorder: 'border-[#e8e402]/25',
   },
   faint: {
     text: 'text-faint',
@@ -55,7 +55,7 @@ const ROLE_ACCENT: Record<Collector['role'], Accent> = {
   metrics: 'cobalt',
   verification: 'gold',
   discovery: 'up',
-  fallback: 'faint',
+  fallback: 'gold',
 };
 
 const ROLE_ICON: Record<string, SourceKind> = {
@@ -102,7 +102,7 @@ export default function ActiveCollectors() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`pipeline-badge pipeline-badge-${ROLE_ACCENT[c.role]} grid h-8 w-8 shrink-0 place-items-center rounded-lg`}
+                  className={`${ROLE_ACCENT[c.role] === 'faint' ? 'pipeline-badge pipeline-badge-faint' : 'weight-pill border'} grid h-8 w-8 shrink-0 place-items-center rounded-lg`}
                 >
                   <SourceIcon kind={icon} />
                 </span>
