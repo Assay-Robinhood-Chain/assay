@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CoverageRow, ConfidenceFloor } from '@/lib/coverage';
 import { formatDate } from '@/lib/scoring';
 import DiscoverySourceBadge from './DiscoverySourceBadge';
+import NextUpdateCountdown from './NextUpdateCountdown';
 
 const FLOOR_CLASS: Record<ConfidenceFloor, string> = {
   high: 'bg-up-soft text-up',
@@ -21,7 +22,8 @@ export default function CoverageTable({ rows }: { rows: CoverageRow[] }) {
               'Discovery source',
               'Sample / upstream total',
               'Confidence floor',
-              'Last ingested',
+              'Last update',
+              'Next update',
             ].map((h) => (
               <th
                 key={h}
@@ -71,6 +73,12 @@ export default function CoverageTable({ rows }: { rows: CoverageRow[] }) {
               </td>
               <td className="px-4 py-3 font-mono text-[12px] text-faint">
                 {formatDate(lp.lastSnapshotAt)}
+              </td>
+              <td className="px-4 py-3 font-mono text-[12px] text-faint">
+                <NextUpdateCountdown
+                  lastResampleAt={lp.lastResampleAt}
+                  sampleSize={lp.sampleSize}
+                />
               </td>
             </tr>
           ))}

@@ -65,6 +65,12 @@ export interface Launchpad {
   chain: typeof import('./constants').TARGET_CHAIN;
   deployerAddresses: string[];
   websiteUrl?: string;
+  // Auto-discovered at onboarding from websiteUrl by fetchLogoUrl()
+  // (supabase/functions/_shared/logoFetch.ts) — og:image, then
+  // apple-touch-icon, then favicon.ico. Never user-uploaded. Null/undefined
+  // = nothing found (no website, unreachable, or no usable icon); render
+  // the initials avatar in that case, same as always.
+  logoUrl?: string | null;
   discoverySource: DiscoverySource;
   discoverySourceUrl?: string; // traceability link into DOCUMENTED_LAUNCHPAD_REGISTRY
   // Backfill sampling policy fields (see backfill-sampling-policy.md, section 6
@@ -74,6 +80,11 @@ export interface Launchpad {
   sampleSize: number;
   onboardedAt: string; // ISO 8601 — when the one-time backfill ran
   lastSnapshotAt: string; // ISO 8601 — for the stale-data check
+  // ISO 8601, null until the sample-resample cron has run for this
+  // launchpad at least once (see supabase/functions/sample-resample).
+  // Drives the coverage table's "next update" column together with
+  // sampleSize (see lib/coverage.ts#nextResampleAt).
+  lastResampleAt: string | null;
   score: LaunchpadScore;
   scoreHistory: ScoreHistoryPoint[];
   launches: Launch[];

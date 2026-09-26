@@ -13,7 +13,7 @@
 --   - upstream-discovery (daily): looks for launches created since the
 --     last check and adds them to `launches` as KNOWN but not yet part
 --     of the active sample (excluded_from_sample = true).
---   - sample-resample (weekly): redraws which of ALL known launches for
+--   - sample-resample (daily): redraws which of ALL known launches for
 --     a launchpad (original sample + everything upstream-discovery has
 --     found since) are the active sample, via sampleWithMinimumAge —
 --     same random-with-a-72h-floor rule as the initial backfill.
@@ -82,12 +82,13 @@ select cron.schedule(
 );
 
 -- ------------------------------------------------------------
--- Cron 5 — Sample resample. Weekly. Redraws each due launchpad's active
--- sample from everything upstream-discovery has found so far. See
--- sample-resample/index.ts and RESAMPLE_INTERVAL_DAYS in constants.ts —
--- change that constant, not this schedule, if the interval needs to
--- differ from "weekly"; this cron just needs to run at least that often
--- to notice a launchpad is due.
+-- Cron 5 — Sample resample. Daily (RESAMPLE_INTERVAL_DAYS = 1).
+-- Redraws each due launchpad's active sample from everything
+-- upstream-discovery has found so far. See sample-resample/index.ts
+-- and RESAMPLE_INTERVAL_DAYS in constants.ts — change that constant,
+-- not this schedule, if the interval needs to differ from "daily";
+-- this cron just needs to run at least that often to notice a
+-- launchpad is due.
 -- ------------------------------------------------------------
 select cron.schedule(
   'sample-resample',
@@ -108,4 +109,4 @@ select cron.schedule(
 -- To unschedule: select cron.unschedule('upstream-discovery'); select cron.unschedule('sample-resample');
 -- To check which launchpads are overdue right now:
 --   select id, slug, last_discovery_at from public.launchpads where sample_size > 0 and (last_discovery_at is null or last_discovery_at < now() - interval '24 hours');
---   select id, slug, last_resample_at from public.launchpads where sample_size > 0 and (last_resample_at is null or last_resample_at < now() - interval '7 days');
+--   select id, slug, last_resample_at from public.launchpads where sample_size > 0 and (last_resample_at is null or last_resample_at < now() - interval '1 day');

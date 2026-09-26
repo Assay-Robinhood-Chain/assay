@@ -45,7 +45,7 @@ export default function DimensionBar({
           className={`font-mono text-sm ${value === null ? 'text-faint' : 'text-ink-soft'}`}
           title={
             value === null
-              ? 'Not enough data yet — excluded from the composite score'
+              ? 'Not enough data yet excluded from the composite score'
               : undefined
           }
         >
@@ -67,7 +67,7 @@ export default function DimensionBar({
       )}
       {value === null && reason && (
         <p className="mt-1.5 text-[12px] leading-relaxed text-gold">
-          Not enough data yet — {reason}
+          Not enough data yet {reason}
         </p>
       )}
       {description && (

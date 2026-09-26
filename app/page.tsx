@@ -313,7 +313,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-soft">
               We don't flatter launchpads into looking safe. Every score is
-              synthesized from three independent sources — never from what a
+              synthesized from three independent sources never from what a
               launchpad says about itself.
             </p>
           </Reveal>

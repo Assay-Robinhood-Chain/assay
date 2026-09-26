@@ -26,6 +26,7 @@ import {
   BACKFILL_POOL_MULTIPLIER,
 } from '../_shared/constants.ts';
 import { computeAndStoreLaunchpadScore } from '../_shared/scoring.ts';
+import { fetchLogoUrl } from '../_shared/logoFetch.ts';
 import {
   initSentry,
   captureException,
@@ -68,7 +69,9 @@ Deno.serve(async (req) => {
 
   const { data: lp, error: lpErr } = await supabase
     .from('launchpads')
-    .select('id, deployer_addresses, discovery_source, sample_size')
+    .select(
+      'id, deployer_addresses, discovery_source, sample_size, website_url, logo_url',
+    )
     .eq('id', launchpadId)
     .single();
 
@@ -84,9 +87,26 @@ Deno.serve(async (req) => {
   if (lp.sample_size > 0) {
     // Section 5 of backfill-sampling-policy.md: this rule never runs
     // twice for the same launchpad unless it's manually re-onboarded.
+    // Logo discovery is exempt from that guard though — it's the one
+    // piece of onboarding this feature ships for launchpads that were
+    // already backfilled before fetchLogoUrl() existed, so re-hitting
+    // this endpoint for one of them still fills in a missing logo_url
+    // (never overwrites one that's already set) even though it declines
+    // to touch launches/sample_size again.
+    let backfilledLogoUrl: string | null = null;
+    if (!lp.logo_url) {
+      backfilledLogoUrl = await fetchLogoUrl(lp.website_url as string | null);
+      if (backfilledLogoUrl) {
+        await supabase
+          .from('launchpads')
+          .update({ logo_url: backfilledLogoUrl })
+          .eq('id', lp.id);
+      }
+    }
     return new Response(
       JSON.stringify({
         error: { code: 'already_backfilled', sample_size: lp.sample_size },
+        logo_url: backfilledLogoUrl ?? lp.logo_url ?? null,
       }),
       { status: 409, headers: { 'Content-Type': 'application/json' } },
     );
@@ -129,6 +149,15 @@ Deno.serve(async (req) => {
       { status: 422, headers: { 'Content-Type': 'application/json' } },
     );
   }
+
+  // Auto-discover a logo from the submitted website — kicked off now so
+  // it runs concurrently with the discovery/insert pipeline below rather
+  // than adding its own latency on top. Best-effort (see logoFetch.ts):
+  // resolves to null on any failure, never rejects. A launchpad that
+  // already has one (e.g. manually re-onboarded) keeps it as-is.
+  const logoUrlPromise: Promise<string | null> = lp.logo_url
+    ? Promise.resolve(lp.logo_url as string)
+    : fetchLogoUrl(lp.website_url as string | null);
 
   // 2. sample = the exact rule from backfill-sampling-policy.md section 1
   const sample = computeBackfillSample(total);
@@ -195,13 +224,17 @@ Deno.serve(async (req) => {
   }
 
   // 4. record both counts — never let sample_size alone imply the
-  // whole population (backfill-sampling-policy.md section 6).
+  // whole population (backfill-sampling-policy.md section 6) — plus
+  // whatever fetchLogoUrl() found (or null, if nothing did).
+  const logoUrl = await logoUrlPromise;
+
   await supabase
     .from('launchpads')
     .update({
       total_launches_upstream: total,
       sample_size: inserted,
       onboarded_at: new Date().toISOString(),
+      logo_url: logoUrl,
     })
     .eq('id', lp.id);
 
@@ -268,6 +301,7 @@ Deno.serve(async (req) => {
       launchpad_id: lp.id,
       total_launches_upstream: total,
       sample_size: inserted,
+      logo_url: logoUrl,
       score: scoreResult,
       immediate_enrichment: immediateEnrichment,
       enrichment: {

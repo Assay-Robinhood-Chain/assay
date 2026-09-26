@@ -111,6 +111,39 @@ Deno.test('young tokens are not judged on Quality / Value / Consistency', () => 
   assert(d.mechanism !== null && d.marketHealth !== null, 'mechanism + market health still measured');
 });
 
+Deno.test('v1.7: a graduated young token counts immediately, an unproven one still waits', () => {
+  // 20 young (12h old) tokens: 10 already graduated, 10 still just "active".
+  const launches = [
+    ...make(10, () => ({
+      launch_date: YOUNG,
+      is_graduated: true,
+      peak_multiple: 2,
+      peak_checked_at: '2026-09-24T00:00:00Z',
+    })),
+    ...make(10, () => ({
+      launch_date: YOUNG,
+      is_graduated: false,
+      peak_multiple: 1,
+      peak_checked_at: '2026-09-24T00:00:00Z',
+    })),
+  ];
+  const d = dims(launches);
+  // Quality's denominator is only the 10 graduated ones (the 10 unproven
+  // ones don't count as failures just for being young); with n=10 (under
+  // the n=20 full-confidence threshold) the Bayesian prior pulls a 100%
+  // graduation rate down from 100 toward the neutral-50 prior, landing at 75.
+  assert(near(d.quality, 75), `graduated-young counts toward quality, got ${d.quality}`);
+  // Value/Consistency likewise only see the 10 graduated tokens' 2x peaks —
+  // the still-unproven ones stay excluded until they age past 72h.
+  assert(near(d.value, 30.1), `value from the 10 graduated tokens' 2x peak, got ${d.value}`);
+
+  // A young token that hasn't graduated (and isn't old enough either) still
+  // contributes nothing to Quality/Value even once mature-sample tests pass.
+  const noneGraduated = dims(make(20, () => ({ launch_date: YOUNG, peak_multiple: 5 })));
+  assert(noneGraduated.quality === null, 'no graduates + all young => quality still n/a');
+  assert(noneGraduated.value === null, 'no graduates + all young => value still n/a');
+});
+
 Deno.test('a mixed-age sample only judges the mature tokens', () => {
   const launches = [
     ...make(10, () => ({ launch_date: OLD, peak_multiple: 4 })),
@@ -189,6 +222,6 @@ Deno.test('scoring reads every launch, not just the first 1000', async () => {
   const result = await computeAndStoreLaunchpadScore(fake.client, 'lp-1');
   assert(fake.requests.length === 3, `3 pages for 2500 rows, got ${fake.requests.length}`);
   assert(result !== null && result.sample_size === 2500, 'sample_size counts all 2500 rows');
-  assert(fake.upserts[0].algorithm_version === 'v1.6', 'algorithm_version v1.6');
+  assert(fake.upserts[0].algorithm_version === 'v1.7', 'algorithm_version v1.7');
   assert((fake.getSampleUpdate() as { sample_size: number }).sample_size === 2500, 'launchpads.sample_size = 2500');
 });

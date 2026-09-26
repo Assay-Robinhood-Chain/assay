@@ -14,6 +14,8 @@ import { starsFromScore } from './scoring';
 // -> confidence gate. The dashboard and the (not-yet-built) paid report
 // would both read from this same shape, per section 1 of the brief.
 
+const DAY_MS = 24 * 3600 * 1000;
+
 function finalScoreFrom(dimensions: DimensionScores): number {
   const raw = (Object.keys(dimensions) as (keyof DimensionScores)[]).reduce(
     (sum, k) => sum + (dimensions[k] ?? 0) * DIMENSION_WEIGHTS[k],
@@ -120,6 +122,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 1420,
     onboardedAt: '2026-06-01T00:00:00Z',
     lastSnapshotAt: '2026-09-21T00:00:00Z',
+    lastResampleAt: new Date(Date.now() - 1.5 * DAY_MS).toISOString(),
     launches: launches(30, 1, 0, 0.41),
     badges: [
       {
@@ -149,6 +152,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 320,
     onboardedAt: '2026-06-15T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 1.2 * 3600 * 1000).toISOString(),
+    lastResampleAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
     launches: launches(26, 2, 0, 0.385),
     badges: [
       {
@@ -173,6 +177,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 96,
     onboardedAt: '2026-07-01T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 2.4 * 3600 * 1000).toISOString(),
+    lastResampleAt: null, // onboarded, but sample-resample hasn't run for it yet
     launches: launches(20, 3, 0, 0.333),
     badges: [
       {
@@ -196,6 +201,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 145,
     onboardedAt: '2026-06-20T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 3.1 * 3600 * 1000).toISOString(),
+    lastResampleAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
     launches: launches(22, 4, 0.02, 0.29),
     badges: [
       {
@@ -219,6 +225,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 610,
     onboardedAt: '2026-06-05T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 0.6 * 3600 * 1000).toISOString(),
+    lastResampleAt: new Date(Date.now() - 1.3 * DAY_MS).toISOString(),
     launches: launches(24, 5, 0.15, 0.19),
     badges: [],
   },
@@ -235,6 +242,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 58,
     onboardedAt: '2026-08-01T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+    lastResampleAt: new Date(Date.now() - 10 * 3600 * 1000).toISOString(),
     launches: launches(18, 6, 0, 0.224),
     badges: [],
   },
@@ -251,6 +259,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 12,
     onboardedAt: '2026-09-10T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 0.3 * 3600 * 1000).toISOString(),
+    lastResampleAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
     launches: launches(12, 7, 0.05, 0.1),
     badges: [],
   },
@@ -267,6 +276,7 @@ const raw: Omit<Launchpad, 'score' | 'scoreHistory'>[] = [
     sampleSize: 4,
     onboardedAt: '2026-09-18T00:00:00Z',
     lastSnapshotAt: new Date(Date.now() - 0.1 * 3600 * 1000).toISOString(),
+    lastResampleAt: null, // just onboarded — first resample hasn't run yet
     launches: launches(4, 8, 0, 0.1),
     badges: [],
   },

@@ -222,11 +222,17 @@ export function computeDimensions(
   const enough = (count: number) => count >= MIN_DATA_POINTS_PER_DIMENSION;
 
   // Outcome-based dimensions (Quality, Value, Consistency) only judge
-  // tokens that have had time to graduate or move: graduation and
-  // peak-vs-launch cannot have played out for a token launched yesterday.
+  // tokens that have had time to graduate or move — UNLESS the token has
+  // already graduated. Graduation is a completed, unambiguous event: if a
+  // token graduated 3 hours after launch, that verdict already exists,
+  // and making it wait out the full 72h before counting would only delay
+  // crediting a launchpad for something that has already happened. A
+  // young token that simply HASN'T graduated yet is a different case —
+  // "not yet" isn't evidence of failure, so it still waits for isMature.
   const minAgeMs = MIN_TOKEN_AGE_HOURS * 3_600_000;
   const isMature = (l: LaunchRow) =>
     nowMs - Date.parse(l.launch_date) >= minAgeMs;
+  const qualifies = (l: LaunchRow) => l.is_graduated || isMature(l);
 
   // Launches whose market data has been fetched. Before that, "not
   // graduated" / "no liquidity" only means "not looked at yet". (The
@@ -239,7 +245,7 @@ export function computeDimensions(
   // wired in yet, so is_confirmed_rugpull is always false and this is
   // graduation-only.)
   let quality: number | null = null;
-  const checkedMature = checked.filter(isMature);
+  const checkedMature = checked.filter(qualifies);
   if (enough(checkedMature.length)) {
     const n = checkedMature.length;
     const gradRate = checkedMature.filter((l) => l.is_graduated).length / n;
@@ -286,7 +292,7 @@ export function computeDimensions(
   // traded, so it never rose: it counts as 1.0x instead of being dropped
   // (dropping it would keep only tokens that traded and inflate both).
   const multiples = launches
-    .filter(isMature)
+    .filter(qualifies)
     .map((l) => l.peak_multiple ?? (l.peak_checked_at !== null ? 1 : null))
     .filter((m): m is number => m !== null)
     .sort((a, b) => a - b);

@@ -7,6 +7,7 @@ import { Launchpad } from '@/lib/types';
 import { rampColor } from '@/lib/scoring';
 import { TARGET_CHAIN, MOBILE_BREAKPOINT_PX } from '@/lib/constants';
 import DirectorySkeleton from './DirectorySkeleton';
+import LaunchpadAvatar from './LaunchpadAvatar';
 
 type SortKey = 'score' | 'quality' | 'marketHealth' | 'sample' | 'name';
 
@@ -164,9 +165,12 @@ export default function DirectoryTable({
                     className="grid grid-cols-[2.4fr_0.9fr_1fr_1fr_0.8fr] items-center gap-4 border-b border-[#4a4740] px-5 py-3.5 last:border-0 hover:bg-white/5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#a3a099]">
-                        {lp.name.slice(0, 2).toUpperCase()}
-                      </div>
+                      <LaunchpadAvatar
+                        name={lp.name}
+                        logoUrl={lp.logoUrl}
+                        className="h-8 w-8 border border-[#302f2a] bg-[#1b1b18]"
+                        textClassName="text-[11px] text-[#a3a099]"
+                      />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate text-sm font-bold text-[#f3f1ea]">
@@ -237,9 +241,12 @@ export default function DirectoryTable({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#302f2a] bg-[#1b1b18] font-mono text-[11px] text-[#6e6c63]">
-                          {lp.name.slice(0, 2).toUpperCase()}
-                        </div>
+                        <LaunchpadAvatar
+                          name={lp.name}
+                          logoUrl={lp.logoUrl}
+                          className="h-9 w-9 border border-[#302f2a] bg-[#1b1b18]"
+                          textClassName="text-[11px] text-[#6e6c63]"
+                        />
                         <div className="min-w-0">
                           <div className="truncate text-sm font-bold text-[#f3f1ea]">
                             {lp.name}
