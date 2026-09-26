@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import BackfillCalculator from '@/components/BackfillCalculator';
-import { PageIcon } from '@/components/icons/PageIcon';
+import { PageIcon, PageIconKind } from '@/components/icons/PageIcon';
 import {
   DIMENSION_LABELS,
   DIMENSION_WEIGHTS,
@@ -103,8 +103,8 @@ export default function MethodologyPage() {
             <p className="mt-2 text-[13.5px] leading-relaxed text-[#b5b2a6]">
               The scoring tables carry no relationship to any billing or
               customer record. A launchpad paying for a report about itself
-              cannot touch its own final score enforced at the schema level,
-              not by an internal policy someone could quietly waive.
+              cannot touch its own final score enforced at the schema level, not
+              by an internal policy someone could quietly waive.
             </p>
           </section>
         </Reveal>
@@ -341,54 +341,57 @@ export default function MethodologyPage() {
           </h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-[#b5b2a6]">
             When a launchpad is first onboarded, Assay decides how many
-            historical launches to pull in with a single, one-time rule
-            separate from the hourly ingestion rotation that runs for launchpads
-            already tracked.
+            historical launches to pull in with a single, one-time rule separate
+            from the hourly ingestion rotation that runs for launchpads already
+            tracked.
           </p>
 
-          <ul className="mt-4 space-y-2 text-[13px] leading-relaxed text-[#b5b2a6]">
-            <li>
-              <strong className="text-[#f3f1ea]">
-                Floor at {MIN_BACKFILL_FULL_THRESHOLD}:
-              </strong>{' '}
-              below this many total launches, sampling isn't worth the
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <BackfillRuleCard
+              n="01"
+              icon="archive"
+              title={`Floor at ${MIN_BACKFILL_FULL_THRESHOLD}`}
+            >
+              Below this many total launches, sampling isn&rsquo;t worth the
               complexity take everything. This is a different concern from the{' '}
-              {MIN_SAMPLE_SIZE_FOR_CONFIDENCE}-launch confidence gate above; a
+              {MIN_SAMPLE_SIZE_FOR_CONFIDENCE} launch confidence gate above; a
               launchpad can be cheap to backfill in full and still end up
               provisional.
-            </li>
-            <li>
-              <strong className="text-[#f3f1ea]">
-                {BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at{' '}
-                {BACKFILL_SAMPLE_CAP.toLocaleString()}:
-              </strong>{' '}
-              the sample scales with the launchpad up to the cap a launchpad
+            </BackfillRuleCard>
+            <BackfillRuleCard
+              n="02"
+              icon="bars"
+              title={`${BACKFILL_SAMPLE_RATIO * 100}% of the upstream total, capped at ${BACKFILL_SAMPLE_CAP.toLocaleString()}`}
+            >
+              The sample scales with the launchpad up to the cap: a launchpad
               with 500 total launches backfills 100, one with 5,000 backfills
               1,000, and one with 276,000 also backfills 1,000. The cap keeps a
-              very large launchpad from exhausting the upstream data APIs; at
+              very large launchpad from exhausting the upstream data APIs at
               that size a thousand launches already pins a rate such as
               graduation to within about three percentage points.
-            </li>
-            <li>
-              <strong className="text-[#f3f1ea]">
-                Recent-first, not random:
-              </strong>{' '}
-              consistent with the scoring engine's own recency weighting a
-              fresh dossier opens with a launchpad's most current behaviour, and
-              needs no separate argument for why old and new launches would
-              otherwise be interchangeable.
-            </li>
-            <li>
-              <strong className="text-[#f3f1ea]">
-                Runs once, at onboarding only.
-              </strong>{' '}
-              After backfill, a launchpad's sampled launches enter the normal
-              hourly rotation, and any launch published after onboarding is
-              picked up through the existing new-launch fast path never
+            </BackfillRuleCard>
+            <BackfillRuleCard
+              n="03"
+              icon="timeline"
+              title="Recent-first, not random"
+            >
+              Consistent with the scoring engine&rsquo;s own recency weighting,
+              a fresh dossier opens with a launchpad&rsquo;s most current
+              behaviour, and needs no separate argument for why old and new
+              launches would otherwise be interchangeable.
+            </BackfillRuleCard>
+            <BackfillRuleCard
+              n="04"
+              icon="checkCircle"
+              title="Runs once, at onboarding only"
+            >
+              After backfill, a launchpad&rsquo;s sampled launches enter the
+              normal hourly rotation, and any launch published after onboarding
+              is picked up through the existing new-launch fast path never
               through this rule again, unless the launchpad is manually
               re-onboarded.
-            </li>
-          </ul>
+            </BackfillRuleCard>
+          </div>
 
           <div className="mt-5">
             <p className="mb-2 text-[12.5px] font-medium text-[#b5b2a6]">
@@ -437,6 +440,38 @@ const THRESHOLD_ACCENT: Record<
     bar: 'bg-down',
   },
 };
+
+function BackfillRuleCard({
+  n,
+  icon,
+  title,
+  children,
+}: {
+  n: string;
+  icon: PageIconKind;
+  title: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flow-step group/rule relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[#e8e402]/50 hover:shadow-[0_14px_32px_-16px_#e8e402]">
+      <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-[#e8e402] transition-transform duration-300 ease-out group-hover/rule:scale-x-100" />
+      <span className="absolute right-4 top-4 font-mono text-[11px] text-[#6e6c63]">
+        {n}
+      </span>
+      <div className="flex items-center gap-2.5 pr-6">
+        <span className="weight-pill grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition-transform duration-300 group-hover/rule:scale-110">
+          <PageIcon kind={icon} size={15} />
+        </span>
+        <p className="font-mono text-[13px] font-semibold leading-snug text-[#f3f1ea]">
+          {title}
+        </p>
+      </div>
+      <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#b5b2a6]">
+        {children}
+      </p>
+    </div>
+  );
+}
 
 function ThresholdCell({
   label,

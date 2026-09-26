@@ -42,7 +42,7 @@ export const BACKFILL_POOL_MULTIPLIER = 3;
 // actively refreshed/scored, so it runs less often to avoid the active
 // sample (and therefore the score) churning day to day.
 export const DISCOVERY_INTERVAL_HOURS = 24; // upstream-discovery: daily
-export const RESAMPLE_INTERVAL_DAYS = 7; // sample-resample: weekly
+export const RESAMPLE_INTERVAL_DAYS = 1; // sample-resample: daily
 // How many recent logs upstream-discovery asks an adapter to scan per
 // launchpad per run, looking for launches not already in `launches`. Kept
 // small relative to BACKFILL_SAMPLE_CAP — this is a "did anything new show
@@ -98,8 +98,11 @@ export const MECHANISM_COMPONENTS_TOTAL = 3;
 // peak-vs-launch need time to play out, so a launchpad whose sample is all
 // one or two days old would otherwise be scored on tokens that simply
 // haven't had a chance yet. Quality, Value and Consistency only count
-// tokens at least this old; Mechanism and Market Health describe the
-// current state and count every token.
+// tokens at least this old — EXCEPT a token that has already graduated,
+// which counts immediately regardless of age (see scoring.ts's
+// `qualifies()`): graduation is a completed event, not something that
+// needs more time to "play out". Mechanism and Market Health describe the
+// current state and count every token regardless.
 export const MIN_TOKEN_AGE_HOURS = 72;
 
 // A composite needs at least this many of the five dimensions measured.
@@ -129,6 +132,13 @@ export const MOBULA_PEAK_CONCURRENCY = 4;
 export const MOBULA_DETAILS_BATCH_SIZE = 10;
 export const MOBULA_DETAILS_CONCURRENCY = 4;
 
+// v1.7: a graduated token counts toward Quality / Value / Consistency
+// immediately, regardless of MIN_TOKEN_AGE_HOURS — graduation is a
+// completed event, so it no longer waits out the 72h maturity window
+// (a token that simply hasn't graduated yet still does). A young
+// graduated token's peak multiple is still only counted once Mobula has
+// actually answered for it (peak_checked_at set) — this doesn't invent
+// data, only lifts the age gate.
 // v1.6: tokens under MIN_TOKEN_AGE_HOURS are excluded from Quality / Value /
 // Consistency; "Mobula had no price history" counts as a 1.0x peak instead
 // of being dropped; a composite needs MIN_DIMENSIONS_FOR_SCORE dimensions.
@@ -140,7 +150,7 @@ export const MOBULA_DETAILS_CONCURRENCY = 4;
 //   - Market Health averages over ALL checked launches; a token with no DEX
 //     pool counts as zero liquidity instead of being left out.
 //   - Mechanism is capped by the share of its components actually measured.
-export const ALGORITHM_VERSION = 'v1.6';
+export const ALGORITHM_VERSION = 'v1.7';
 
 // SSRF-safe fetch (see ssrfSafeFetch.ts) and submission rate limiting
 export const URL_FETCH_TIMEOUT_MS = 8000;

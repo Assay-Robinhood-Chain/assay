@@ -16,6 +16,7 @@ import {
   DIMENSION_WEIGHTS,
 } from '@/lib/constants';
 import ScoreBadge from '@/components/ScoreBadge';
+import LaunchpadAvatar from '@/components/LaunchpadAvatar';
 import DimensionBar from '@/components/DimensionBar';
 import BackfillNote from '@/components/BackfillNote';
 import ScoreHistoryChart from '@/components/ScoreHistoryChart';
@@ -142,9 +143,12 @@ export default async function LaunchpadDetailPage({
           />
           <div className="night-surface flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-line bg-panel font-mono text-lg text-faint">
-                {lp.name.slice(0, 2).toUpperCase()}
-              </div>
+              <LaunchpadAvatar
+                name={lp.name}
+                logoUrl={lp.logoUrl}
+                className="h-14 w-14 border border-line bg-panel"
+                textClassName="text-lg text-faint"
+              />
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold text-ink sm:text-2xl">

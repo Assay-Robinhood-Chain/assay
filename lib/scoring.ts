@@ -87,15 +87,18 @@ export function dimensionGapReason(
   const sampled = launches.filter((l) => !l.excludedFromSample);
   const isMature = (l: Launch) =>
     hoursSince(l.launchDate, now) >= MIN_TOKEN_AGE_HOURS;
+  // Mirrors scoring.ts's qualifies(): a graduated launch counts toward
+  // Quality/Value/Consistency immediately, without waiting out the age gate.
+  const qualifies = (l: Launch) => l.isGraduated || isMature(l);
 
   let n: number;
   let what: string;
   switch (key) {
     case 'quality':
       n = sampled.filter(
-        (l) => l.metricsFetchedAt !== null && isMature(l),
+        (l) => l.metricsFetchedAt !== null && qualifies(l),
       ).length;
-      what = `≥${MIN_TOKEN_AGE_HOURS}h old with market data checked`;
+      what = `≥${MIN_TOKEN_AGE_HOURS}h old (or already graduated) with market data checked`;
       break;
     case 'mechanism':
       n = sampled.filter((l) => l.isContractVerified !== null).length;
@@ -109,9 +112,9 @@ export function dimensionGapReason(
     case 'consistency':
       n = sampled.filter(
         (l) =>
-          isMature(l) && (l.peakMultiple !== null || l.peakCheckedAt !== null),
+          qualifies(l) && (l.peakMultiple !== null || l.peakCheckedAt !== null),
       ).length;
-      what = `≥${MIN_TOKEN_AGE_HOURS}h old with price history`;
+      what = `≥${MIN_TOKEN_AGE_HOURS}h old (or already graduated) with price history`;
       break;
   }
   if (n >= need) return null;

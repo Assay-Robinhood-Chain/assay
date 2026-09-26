@@ -25,12 +25,14 @@ interface LaunchpadRow {
   chain: string;
   deployer_addresses: string[];
   website_url: string | null;
+  logo_url: string | null;
   discovery_source: Launchpad['discoverySource'];
   discovery_source_url: string | null;
   total_launches_upstream: number | null;
   sample_size: number;
   onboarded_at: string;
   last_snapshot_at: string | null;
+  last_resample_at: string | null;
 }
 
 interface ScoreRow {
@@ -157,12 +159,14 @@ function mapLaunchpad(
     chain: 'Robinhood Chain',
     deployerAddresses: row.deployer_addresses,
     websiteUrl: row.website_url ?? undefined,
+    logoUrl: row.logo_url ?? null,
     discoverySource: row.discovery_source,
     discoverySourceUrl: row.discovery_source_url ?? undefined,
     totalLaunchesUpstream: row.total_launches_upstream,
     sampleSize: row.sample_size,
     onboardedAt: row.onboarded_at,
     lastSnapshotAt: row.last_snapshot_at ?? row.onboarded_at,
+    lastResampleAt: row.last_resample_at ?? null,
     score,
     scoreHistory,
     launches,

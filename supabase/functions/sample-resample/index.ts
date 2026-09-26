@@ -1,6 +1,6 @@
 // supabase/functions/sample-resample/index.ts
 //
-// Cron 5 — daily invocation, weekly per-launchpad effect (see
+// Cron 5 — daily invocation, daily per-launchpad effect (see
 // 0012_sample_rotation.sql; actual per-launchpad cadence is
 // RESAMPLE_INTERVAL_DAYS in constants.ts). Redraws which of a
 // launchpad's KNOWN launches (the original onboarding-backfill sample,

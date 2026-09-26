@@ -44,6 +44,13 @@ export const BACKFILL_SAMPLE_CAP = 1000;
 export const INGESTION_INTERVAL_HOURS = 1; // Collectors + Normaliser rotation
 export const SCORING_SWEEP_INTERVAL_HOURS = 24; // daily scoring cronjob
 
+// Cron 5 — sample-resample (0012_sample_rotation.sql). Ticks daily at
+// RESAMPLE_CRON_HOUR_UTC; RESAMPLE_INTERVAL_DAYS is the per-launchpad
+// cadence that decides which launchpads are actually due on a given tick
+// (mirrors supabase/functions/_shared/constants.ts).
+export const RESAMPLE_INTERVAL_DAYS = 1;
+export const RESAMPLE_CRON_HOUR_UTC = 4; // 04:00 UTC, after discovery + scoring
+
 // third-party-indexer-integration.md — launch discovery source priority
 export const BITQUERY_DAILY_CALL_BUDGET = 4000;
 export const DISCOVERY_SOURCE_LABELS = {
@@ -85,7 +92,7 @@ export const DIMENSION_DESCRIPTIONS: Record<
   string
 > = {
   quality:
-    "Smoothed graduation rate + smoothed rugpull rate, Bayesian-adjusted so tiny samples aren't over- or under-penalized.",
+    "Smoothed graduation rate + smoothed rugpull rate, Bayesian adjusted so tiny samples aren't over  or under penalized.",
   mechanism: 'Contract verification, audit status, and LP-lock rate.',
   marketHealth:
     'Liquidity/volume depth, minus wash-trading and holder-concentration penalties.',
@@ -100,13 +107,13 @@ export const DIMENSION_DESCRIPTIONS: Record<
 // whenever a new data source is wired into the scorer.
 export const DIMENSION_BASIS: Record<keyof typeof DIMENSION_LABELS, string> = {
   quality:
-    'Measured today: graduation rate of tokens at least 72h old (a DEX pool with real liquidity, or a completed bonding curve). Rugpull detection is not wired in yet.',
+    'Measured today: graduation rate of tokens at least 72h old (a DEX pool with real liquidity, or a completed bonding curve) a token that has already graduated counts immediately regardless of age. Rugpull detection is not wired in yet.',
   mechanism:
     'Measured today: share of token contracts verified on Blockscout, capped at one third of the scale until audit and LP-lock data are wired in.',
   marketHealth:
     'Measured today: liquidity depth across all checked tokens (DEX pool via Dexscreener, or bonding-curve reserves via Mobula) a token with neither counts as zero. Volume, wash-trading and holder-concentration are not wired in yet.',
   value:
-    'Measured today: median peak-vs-launch multiple of tokens at least 72h old (Mobula price candles), on a log scale a token that never rose above its launch price scores 0, 10× scores 100.',
+    'Measured today: median peak-vs-launch multiple of tokens at least 72h old, or already graduated (Mobula price candles), on a log scale a token that never rose above its launch price scores 0, 10× scores 100.',
   consistency:
     'Measured today: how tightly peak multiples cluster, multiplied by how good the typical outcome is tokens that all flatline do not count as consistent.',
 };
