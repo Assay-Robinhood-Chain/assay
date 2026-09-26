@@ -4,7 +4,10 @@
 // brief (section 4). Each adapter's only job is to fetch + normalise —
 // it never writes to the database itself.
 
-import { MIN_TOKEN_AGE_HOURS } from './constants.ts';
+import {
+  MIN_TOKEN_AGE_HOURS,
+  RPC_DISCOVERY_TIME_BUDGET_MS,
+} from './constants.ts';
 
 export interface DexscreenerMetrics {
   priceUsd: number | null;
@@ -97,13 +100,23 @@ export interface MobulaPeakMultiple {
  * quotes) can reach the function as a literal value with those characters. */
 function mobulaChainId(): string {
   const raw = Deno.env.get('MOBULA_CHAIN_ID');
-  const cleaned = raw ? raw.trim().replace(/^["']+|["']+$/g, '').trim() : '';
+  const cleaned = raw
+    ? raw
+        .trim()
+        .replace(/^["']+|["']+$/g, '')
+        .trim()
+    : '';
   return cleaned || `evm:${blockscoutChainId()}`;
 }
 
 function mobulaApiKey(): string | null {
   const raw = Deno.env.get('MOBULA_API_KEY');
-  const cleaned = raw ? raw.trim().replace(/^["']+|["']+$/g, '').trim() : '';
+  const cleaned = raw
+    ? raw
+        .trim()
+        .replace(/^["']+|["']+$/g, '')
+        .trim()
+    : '';
   return cleaned || null;
 }
 
@@ -289,7 +302,10 @@ export async function mobulaPeakMultiplesBatch(
       try {
         const res = await fetch(`${baseUrl}/token/ohlcv-history`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: apiKey! },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: apiKey!,
+          },
           body: JSON.stringify(
             chunk.map((it) => ({
               address: it.tokenAddress,
@@ -331,7 +347,10 @@ export async function mobulaPeakMultiplesBatch(
   }
 
   await Promise.all(
-    Array.from({ length: Math.max(1, Math.min(concurrency, chunks.length)) }, worker),
+    Array.from(
+      { length: Math.max(1, Math.min(concurrency, chunks.length)) },
+      worker,
+    ),
   );
   return { peaks, error };
 }
@@ -367,7 +386,11 @@ function finiteOrNull(v: unknown): number | null {
 export function parseMobulaTokenDetails(
   entry: Record<string, any> | null | undefined,
 ): { address: string; details: MobulaTokenDetails } | null {
-  if (!entry || typeof entry !== 'object' || typeof entry.address !== 'string') {
+  if (
+    !entry ||
+    typeof entry !== 'object' ||
+    typeof entry.address !== 'string'
+  ) {
     return null;
   }
   return {
@@ -419,7 +442,10 @@ export async function mobulaTokenDetailsBatch(
       try {
         const res = await fetch(`${baseUrl}/token/details`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: apiKey! },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: apiKey!,
+          },
           body: JSON.stringify(
             chunk.map((address) => ({ blockchain, address })),
           ),
@@ -451,7 +477,10 @@ export async function mobulaTokenDetailsBatch(
   }
 
   await Promise.all(
-    Array.from({ length: Math.max(1, Math.min(concurrency, chunks.length)) }, worker),
+    Array.from(
+      { length: Math.max(1, Math.min(concurrency, chunks.length)) },
+      worker,
+    ),
   );
   return { details, error };
 }
@@ -776,7 +805,23 @@ export async function rpcSelfIndexedAdapter(
     // loop forever.
     const LOGS_PER_PAGE_ESTIMATE = 50;
     const maxPages = Math.ceil(poolTarget / LOGS_PER_PAGE_ESTIMATE) * 2 + 5;
-    while (byToken.size < poolTarget && pages < maxPages) {
+    // Each iteration below is a sequential, cursor-dependent `await
+    // fetch()` — pages can't be requested in parallel because each one
+    // needs the previous page's next_page_params. On a large factory
+    // (high poolTarget -> high maxPages), that sequential chain of
+    // round-trips is exactly what exhausted the Edge Function's
+    // wall-clock budget (546 WallClockTime) even though CPU/memory
+    // stayed low the whole time — this loop was just waiting on
+    // network I/O, page after page. Bail out on elapsed wall-clock
+    // time, not just page count, so a slow-responding Blockscout (or a
+    // launchpad with an unexpectedly huge history) degrades to "smaller
+    // pool than requested" instead of taking the whole request down.
+    const deadline = Date.now() + RPC_DISCOVERY_TIME_BUDGET_MS;
+    while (
+      byToken.size < poolTarget &&
+      pages < maxPages &&
+      Date.now() < deadline
+    ) {
       const url = `${baseUrl}/${blockscoutChainId()}/api/v2/addresses/${factoryAddress}/logs?apikey=${apiKey}${query}`;
       const res = await fetch(url);
       if (!res.ok) {
@@ -835,6 +880,11 @@ export async function rpcSelfIndexedAdapter(
     if (hasSince && byToken.size >= poolTarget) {
       console.warn(
         `rpcSelfIndexedAdapter: hit poolTarget (${poolTarget}) before reaching the discovery cursor for ${factoryAddress} — some launches between the cursor and the oldest fetched log may be missed.`,
+      );
+    }
+    if (Date.now() >= deadline && byToken.size < poolTarget) {
+      console.warn(
+        `rpcSelfIndexedAdapter: hit the ${RPC_DISCOVERY_TIME_BUDGET_MS}ms time budget for ${factoryAddress} after ${pages} page(s) with only ${byToken.size}/${poolTarget} pool candidates gathered — returning the partial pool instead of risking a 546. Consider raising RPC_DISCOVERY_TIME_BUDGET_MS or lowering BACKFILL_POOL_MULTIPLIER if this happens often.`,
       );
     }
   } catch (err) {

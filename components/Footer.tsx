@@ -5,7 +5,7 @@ import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
 
 // TODO: replace with the real Assay X (Twitter) and GitHub URLs.
 const X_URL = '#';
-const GITHUB_URL = '#';
+const GITHUB_URL = 'https://github.com/Assay-Robinhood-Chain/assay';
 
 function XIcon() {
   return (
@@ -119,7 +119,7 @@ export default function Footer() {
             adviser.
           </span>
           <div className="flex items-center gap-3">
-            <span className="font-mono">algorithm_version: v1.6</span>
+            <span className="font-mono">algorithm_version: v1.9</span>
             <div className="flex items-center gap-2">
               <SocialIconLink href={X_URL} label="Assay on X">
                 <XIcon />
