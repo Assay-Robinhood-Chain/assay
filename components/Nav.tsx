@@ -7,6 +7,32 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
 
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.9 2H22l-7.6 8.7L23.3 22H16.6l-5.2-6.8L5.4 22H2.3l8.1-9.3L1.5 2h6.9l4.7 6.2L18.9 2Zm-1.2 18h1.7L7 4h-1.8l12.5 16Z" />
+    </svg>
+  );
+}
+
+// TODO: replace with the real Assay X (Twitter) profile URL.
+const X_URL = '#';
+
+function XButton() {
+  return (
+    <a
+      href={X_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Assay on X"
+      title="Assay on X"
+      className="layout-surface grid h-9 w-9 shrink-0 place-items-center rounded-full border bg-card text-ink-soft hover:text-ink"
+    >
+      <XIcon />
+    </a>
+  );
+}
+
 const LINKS = [
   { href: '/', label: 'Home' },
   { href: '/rankings', label: 'Rankings' },
@@ -57,7 +83,7 @@ export default function Nav() {
                 {active && (
                   <motion.span
                     layoutId="nav-active"
-                    className="absolute -bottom-[15px] left-0 right-0 h-[2px] bg-cobalt"
+                    className="absolute -bottom-[15px] left-0 right-0 h-[2px] bg-nav-active"
                     transition={{ type: 'spring', stiffness: 500, damping: 40 }}
                   />
                 )}
@@ -68,6 +94,7 @@ export default function Nav() {
 
         <div className="hidden items-center gap-2.5 md:flex">
           <ThemeToggle />
+          <XButton />
           <Link
             href="/get-listed"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-paper transition-opacity hover:opacity-90"
@@ -91,6 +118,7 @@ export default function Nav() {
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
+          <XButton />
           <button
             aria-label="Toggle menu"
             aria-expanded={open}

@@ -42,6 +42,9 @@
   --lime: #d7f900;
   --lime-soft: rgba(215, 249, 0, 0.14);
   --lime-ink: #141413;
+
+  /* Active nav-link underline: near-black in light mode, gold/yellow in dark. */
+  --nav-active: var(--ink);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,6 +67,7 @@
     --down: #ff7a6e;
     --down-soft: rgba(255, 122, 110, 0.14);
     color-scheme: dark;
+    --nav-active: var(--gold);
   }
 }
 
@@ -86,6 +90,7 @@
   --down: #ff7a6e;
   --down-soft: rgba(255, 122, 110, 0.14);
   color-scheme: dark;
+  --nav-active: var(--gold);
 }
 
 @theme inline {
@@ -126,6 +131,7 @@
   --color-lime: var(--lime);
   --color-lime-soft: var(--lime-soft);
   --color-lime-ink: var(--lime-ink);
+  --color-nav-active: var(--nav-active);
 }
 
 * {
