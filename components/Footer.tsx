@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { SCORE_DISCLAIMER, TARGET_CHAIN } from '@/lib/constants';
 
 // TODO: replace with the real Assay X (Twitter) and GitHub URLs.
-const X_URL = '#';
+const X_URL = 'https://x.com/assaytechX';
 const GITHUB_URL = 'https://github.com/Assay-Robinhood-Chain/assay';
 
 function XIcon() {
