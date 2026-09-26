@@ -16,7 +16,7 @@ function XIcon() {
 }
 
 // TODO: replace with the real Assay X (Twitter) profile URL.
-const X_URL = '#';
+const X_URL = 'https://x.com/assaytechX';
 
 function XButton() {
   return (
