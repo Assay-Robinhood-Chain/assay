@@ -14,8 +14,14 @@ export const MIN_SAMPLE_SIZE_FOR_CONFIDENCE = 20;
 export const PROVISIONAL_STAR_CAP = 1;
 // Server-side rule, mirrored for display: a dimension is only scored once
 // this many launches carry the data it needs.
+// v1.9: no longer applies to Quality/Value/Consistency (see
+// tieredOutcomePool() server-side) — still gates Mechanism/Market Health.
 export const MIN_DATA_POINTS_PER_DIMENSION = 5;
 // Server-side rules, mirrored for display (see supabase/functions/_shared/constants.ts).
+// v1.9: the age tier of last resort for Quality/Value/Consistency, used
+// only once a launchpad has zero graduated launches — see
+// tieredOutcomePool() server-side for the full graduated > mature >
+// whole-pool priority order.
 export const MIN_TOKEN_AGE_HOURS = 72;
 export const MIN_DIMENSIONS_FOR_SCORE = 3;
 
@@ -107,13 +113,13 @@ export const DIMENSION_DESCRIPTIONS: Record<
 // whenever a new data source is wired into the scorer.
 export const DIMENSION_BASIS: Record<keyof typeof DIMENSION_LABELS, string> = {
   quality:
-    'Measured today: graduation rate of tokens at least 72h old (a DEX pool with real liquidity, or a completed bonding curve) a token that has already graduated counts immediately regardless of age. Rugpull detection is not wired in yet.',
+    'Measured today: graduation rate (a DEX pool with real liquidity, or a completed bonding curve) over whichever comes first — every graduated launch if any exist, else every launch at least 72h old, else the whole sample. Rugpull detection is not wired in yet.',
   mechanism:
     'Measured today: share of token contracts verified on Blockscout, capped at one third of the scale until audit and LP-lock data are wired in.',
   marketHealth:
     'Measured today: liquidity depth across all checked tokens (DEX pool via Dexscreener, or bonding-curve reserves via Mobula) a token with neither counts as zero. Volume, wash-trading and holder-concentration are not wired in yet.',
   value:
-    'Measured today: median peak-vs-launch multiple of tokens at least 72h old, or already graduated (Mobula price candles), on a log scale a token that never rose above its launch price scores 0, 10× scores 100.',
+    'Measured today: median peak-vs-launch multiple (Mobula price candles) over the same graduated > 72h-old > whole-sample priority as Quality, on a log scale a token that never rose above its launch price scores 0, 10× scores 100.',
   consistency:
     'Measured today: how tightly peak multiples cluster, multiplied by how good the typical outcome is tokens that all flatline do not count as consistent.',
 };

@@ -16,16 +16,13 @@ import { ssrfSafeFetch, SsrfBlockedError } from './ssrfSafeFetch.ts';
 
 const HTML_SCAN_MAX_BYTES = 200_000; // <head> is always near the top
 
-/** Pulls the best logo candidate out of a page's <head>: og:image first
- * (usually a proper square/social-card logo), then apple-touch-icon
- * (usually higher-res than favicon.ico), then any <link rel="icon">. */
+/** Pulls a favicon reference out of a page's <head>: apple-touch-icon
+ * first (usually higher-res than favicon.ico), then any <link
+ * rel="icon">. Deliberately NOT og:image — that's a social-preview
+ * banner, not a square logo, and looked wrong once actually rendered
+ * as a small round avatar. */
 function extractCandidate(html: string): string | null {
   const head = html.slice(0, HTML_SCAN_MAX_BYTES);
-
-  const metaOgImage = head.match(
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
-  );
-  if (metaOgImage) return metaOgImage[1];
 
   const appleTouchIcon = head.match(
     /<link[^>]+rel=["'](?:apple-touch-icon(?:-precomposed)?)["'][^>]+href=["']([^"']+)["']/i,
@@ -40,7 +37,7 @@ function extractCandidate(html: string): string | null {
   return null;
 }
 
-/** Fetches `websiteUrl`, looks for a logo/icon reference in its HTML, and
+/** Fetches `websiteUrl`, looks for a favicon reference in its HTML, and
  * confirms the resolved image URL is itself fetchable (through the same
  * SSRF check) before returning it — a broken or unsafe reference is
  * treated the same as finding nothing. Falls back to `/favicon.ico` on

@@ -94,57 +94,65 @@ Deno.test('mechanism is capped at the measured share of its components', () => {
   assert(dims(make(20, () => ({ is_contract_verified: null }))).mechanism === null, 'unknown verification => n/a');
 });
 
-Deno.test('dimensions need MIN_DATA_POINTS launches with data', () => {
+Deno.test('v1.9: Mechanism/Market Health still need MIN_DATA_POINTS; Quality/Value/Consistency no longer do', () => {
+  // Only 4 data points — under 5, but none graduated and none mature
+  // (default launch_date is OLD, i.e. mature), so tier 2 (mature) still
+  // picks all 4 up for Quality/Value/Consistency.
   const d = dims(make(4, () => ({ peak_multiple: 3, is_contract_verified: true })));
-  assert(d.value === null && d.consistency === null && d.mechanism === null, 'under 5 => n/a');
+  assert(d.mechanism === null, 'mechanism still needs >=5 data points, got ' + d.mechanism);
+  assert(
+    d.value !== null && d.consistency !== null,
+    'v1.9: value/consistency score off a tiered pool of any size, got ' + JSON.stringify(d),
+  );
 });
 
-// --- v1.6 ------------------------------------------------------------------
+// --- v1.9 (supersedes v1.6/v1.7 below) --------------------------------------
+// v1.6 excluded young, non-graduated tokens from Quality/Value/Consistency
+// until they passed MIN_TOKEN_AGE_HOURS, and required >=5 to count at all.
+// v1.7 let an already-graduated young token count immediately, merged
+// together with any mature tokens in one combined pool.
+// v1.9 replaces that combined pool with a strict PRIORITY: graduated
+// launches win outright when any exist (mature-but-not-graduated ones are
+// then excluded, not merged in); else mature launches win; else the whole
+// (young, unproven) pool is used rather than reporting "not yet scored".
+// None of these three tiers requires MIN_DATA_POINTS_PER_DIMENSION anymore.
 
-Deno.test('young tokens are not judged on Quality / Value / Consistency', () => {
+Deno.test('v1.9: with no graduates and nothing past 72h, the whole young sample is used (tier 3)', () => {
   const d = dims(
     make(50, () => ({ launch_date: YOUNG, peak_multiple: 3, liquidity_usd: 5000, is_contract_verified: true })),
   );
-  assert(d.quality === null, 'quality n/a for 12h-old tokens');
-  assert(d.value === null && d.consistency === null, 'value + consistency n/a for 12h-old tokens');
-  // Mechanism and Market Health describe the CURRENT state: all ages count.
+  assert(near(d.quality, 0), `all-active, none graduated/mature => quality 0 (not n/a), got ${d.quality}`);
+  assert(near(d.value, 47.7), `value from the whole young pool (median 3x), got ${d.value}`);
+  assert(d.consistency !== null, 'consistency also falls back to the whole pool');
+  // Mechanism and Market Health describe the CURRENT state and were never
+  // gated by this — unaffected either way.
   assert(d.mechanism !== null && d.marketHealth !== null, 'mechanism + market health still measured');
 });
 
-Deno.test('v1.7: a graduated young token counts immediately, an unproven one still waits', () => {
-  // 20 young (12h old) tokens: 10 already graduated, 10 still just "active".
+Deno.test('v1.9: a graduated launch wins outright — mature-but-not-graduated ones are excluded, not merged', () => {
+  // 10 already graduated (2x peaks) + 10 merely mature, never graduated,
+  // and doing MUCH better (10x peaks). The old v1.7 rule would have
+  // merged all 20 into one pool. v1.9 must NOT: once any graduated launch
+  // exists, only graduated launches count toward Quality/Value/Consistency.
   const launches = [
-    ...make(10, () => ({
-      launch_date: YOUNG,
-      is_graduated: true,
-      peak_multiple: 2,
-      peak_checked_at: '2026-09-24T00:00:00Z',
-    })),
-    ...make(10, () => ({
-      launch_date: YOUNG,
-      is_graduated: false,
-      peak_multiple: 1,
-      peak_checked_at: '2026-09-24T00:00:00Z',
-    })),
+    ...make(10, () => ({ is_graduated: true, peak_multiple: 2, peak_checked_at: '2026-09-24T00:00:00Z' })),
+    ...make(10, () => ({ is_graduated: false, peak_multiple: 10, peak_checked_at: '2026-09-24T00:00:00Z' })),
   ];
   const d = dims(launches);
-  // Quality's denominator is only the 10 graduated ones (the 10 unproven
-  // ones don't count as failures just for being young); with n=10 (under
-  // the n=20 full-confidence threshold) the Bayesian prior pulls a 100%
-  // graduation rate down from 100 toward the neutral-50 prior, landing at 75.
-  assert(near(d.quality, 75), `graduated-young counts toward quality, got ${d.quality}`);
-  // Value/Consistency likewise only see the 10 graduated tokens' 2x peaks —
-  // the still-unproven ones stay excluded until they age past 72h.
-  assert(near(d.value, 30.1), `value from the 10 graduated tokens' 2x peak, got ${d.value}`);
-
-  // A young token that hasn't graduated (and isn't old enough either) still
-  // contributes nothing to Quality/Value even once mature-sample tests pass.
-  const noneGraduated = dims(make(20, () => ({ launch_date: YOUNG, peak_multiple: 5 })));
-  assert(noneGraduated.quality === null, 'no graduates + all young => quality still n/a');
-  assert(noneGraduated.value === null, 'no graduates + all young => value still n/a');
+  // n=10, 100% graduation rate, Bayesian prior (weight 10) pulls it to 75.
+  assert(near(d.quality, 75), `quality from the 10 graduated only, got ${d.quality}`);
+  // If the 10x-peak mature tokens had been merged in, value would hit the
+  // 100 cap (10x = 100). Getting 30.1 instead proves they were excluded.
+  assert(near(d.value, 30.1), `value from the 10 graduated 2x peaks ONLY, got ${d.value}`);
 });
 
-Deno.test('a mixed-age sample only judges the mature tokens', () => {
+Deno.test('v1.9: no graduates, none mature either => the whole (young) sample is scored, not n/a', () => {
+  const d = dims(make(20, () => ({ launch_date: YOUNG, peak_multiple: 5 })));
+  assert(near(d.quality, 0), `no graduates + all young => quality 0 (tier 3), got ${d.quality}`);
+  assert(near(d.value, 69.9), `value off the whole young pool (5x median), got ${d.value}`);
+});
+
+Deno.test('a mixed-age sample with no graduates only judges the mature tokens (tier 2)', () => {
   const launches = [
     ...make(10, () => ({ launch_date: OLD, peak_multiple: 4 })),
     ...make(500, () => ({ launch_date: YOUNG, peak_multiple: 1 })),
@@ -173,13 +181,23 @@ Deno.test('Mobula "no price history" counts as 1.0x, "no evidence" is excluded',
 });
 
 Deno.test('a composite needs at least 3 dimensions', () => {
-  // Young sample: only Mechanism + Market Health are measurable => 2 dims.
-  const young = make(100, () => ({ launch_date: YOUNG, is_contract_verified: true }));
-  assert(scoreLaunches(young, NOW) === null, 'only 2 dimensions => no composite');
-  // Same launchpad once the tokens are old enough: 3+ dims => a score.
-  const mature = make(100, () => ({ launch_date: OLD, is_contract_verified: true }));
-  const r = scoreLaunches(mature, NOW);
-  assert(r !== null && r.dimensionsScored >= 3, 'mature sample => scored');
+  // v1.9: Quality is measurable off as few as 1 checked launch (no floor),
+  // so isolating "only 2 dims" now means keeping Market Health (which
+  // still needs >=5 checked) out, not keeping Quality out. Mechanism
+  // (100 verified) + Quality (3 checked, mature by default) = 2 dims;
+  // Value/Consistency stay null (no peak data anywhere in either sample).
+  const twoDims = [
+    ...make(3, () => ({ is_contract_verified: true })),
+    ...make(97, () => ({ is_contract_verified: true, metrics_fetched_at: null })),
+  ];
+  assert(scoreLaunches(twoDims, NOW) === null, 'only 2 dimensions => no composite');
+  // Bump checked past 5 and Market Health joins in => 3 dims => scored.
+  const threeDims = [
+    ...make(10, () => ({ is_contract_verified: true })),
+    ...make(90, () => ({ is_contract_verified: true, metrics_fetched_at: null })),
+  ];
+  const r = scoreLaunches(threeDims, NOW);
+  assert(r !== null && r.dimensionsScored >= 3, '>=5 checked adds Market Health => 3 dims => scored');
 });
 
 Deno.test('no measurable dimension => no score', () => {
@@ -222,6 +240,6 @@ Deno.test('scoring reads every launch, not just the first 1000', async () => {
   const result = await computeAndStoreLaunchpadScore(fake.client, 'lp-1');
   assert(fake.requests.length === 3, `3 pages for 2500 rows, got ${fake.requests.length}`);
   assert(result !== null && result.sample_size === 2500, 'sample_size counts all 2500 rows');
-  assert(fake.upserts[0].algorithm_version === 'v1.7', 'algorithm_version v1.7');
+  assert(fake.upserts[0].algorithm_version === 'v1.9', 'algorithm_version v1.9');
   assert((fake.getSampleUpdate() as { sample_size: number }).sample_size === 2500, 'launchpads.sample_size = 2500');
 });

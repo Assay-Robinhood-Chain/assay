@@ -221,18 +221,41 @@ export function computeDimensions(
 ): Dimensions {
   const enough = (count: number) => count >= MIN_DATA_POINTS_PER_DIMENSION;
 
-  // Outcome-based dimensions (Quality, Value, Consistency) only judge
-  // tokens that have had time to graduate or move — UNLESS the token has
-  // already graduated. Graduation is a completed, unambiguous event: if a
-  // token graduated 3 hours after launch, that verdict already exists,
-  // and making it wait out the full 72h before counting would only delay
-  // crediting a launchpad for something that has already happened. A
-  // young token that simply HASN'T graduated yet is a different case —
-  // "not yet" isn't evidence of failure, so it still waits for isMature.
+  // Outcome-based dimensions (Quality, Value, Consistency) draw from a
+  // strict, tiered pool instead of a fixed age/graduation gate:
+  //   1. Any graduated launch in the pool -> use ONLY graduated launches.
+  //      Graduation is a completed, unambiguous event — one graduation is
+  //      real evidence, not a "small sample" to be distrusted, so
+  //      MIN_DATA_POINTS_PER_DIMENSION does NOT apply to this tier.
+  //   2. None graduated, but some are >= MIN_TOKEN_AGE_HOURS old -> use
+  //      ONLY those. Same reasoning: age alone (with no graduation event)
+  //      is not "in progress" the way a brand-new token is, so no minimum
+  //      applies here either.
+  //   3. Neither exists (the whole pool is young and unproven) -> fall
+  //      back to the WHOLE pool rather than reporting "not enough data"
+  //      for a launchpad's entire first days. This tier is deliberately
+  //      the full pool, not a random subset: scoring.ts's contract is
+  //      "same inputs + same ALGORITHM_VERSION => same output, every
+  //      time" (see computeAndStoreLaunchpadScore above), and drawing a
+  //      Math.random() subset would make the score for the same
+  //      launches on the same day non-reproducible. Want a random-looking
+  //      but still reproducible subset instead? That needs a seed derived
+  //      from the data (e.g. launchpad id + score_date), not true
+  //      randomness — ask if you want that wired in instead.
+  // v1.9: this replaces the old single "graduated OR mature" filter that
+  // still required MIN_DATA_POINTS_PER_DIMENSION (5) to count at all,
+  // which is why a launchpad with e.g. one graduated token used to show
+  // "Not yet scored" until four more joined it.
   const minAgeMs = MIN_TOKEN_AGE_HOURS * 3_600_000;
   const isMature = (l: LaunchRow) =>
     nowMs - Date.parse(l.launch_date) >= minAgeMs;
-  const qualifies = (l: LaunchRow) => l.is_graduated || isMature(l);
+  function tieredOutcomePool(pool: LaunchRow[]): LaunchRow[] {
+    const graduated = pool.filter((l) => l.is_graduated);
+    if (graduated.length > 0) return graduated;
+    const mature = pool.filter(isMature);
+    if (mature.length > 0) return mature;
+    return pool;
+  }
 
   // Launches whose market data has been fetched. Before that, "not
   // graduated" / "no liquidity" only means "not looked at yet". (The
@@ -241,15 +264,17 @@ export function computeDimensions(
   const checked = launches.filter((l) => l.metrics_fetched_at !== null);
 
   // Quality: smoothed graduation rate minus rugpull rate, Bayesian-adjusted
-  // toward a neutral 50 for very small samples. (Rugpull detection is not
-  // wired in yet, so is_confirmed_rugpull is always false and this is
-  // graduation-only.)
+  // toward a neutral 50 for very small samples (this smoothing is
+  // unrelated to — and unaffected by — the tiering above: it's what keeps
+  // "1 of 1 graduated" from scoring a naive, overconfident 100). Rugpull
+  // detection is not wired in yet, so is_confirmed_rugpull is always
+  // false and this is graduation-only.
   let quality: number | null = null;
-  const checkedMature = checked.filter(qualifies);
-  if (enough(checkedMature.length)) {
-    const n = checkedMature.length;
-    const gradRate = checkedMature.filter((l) => l.is_graduated).length / n;
-    const rugRate = checkedMature.filter((l) => l.is_confirmed_rugpull).length / n;
+  const qualityPool = tieredOutcomePool(checked);
+  if (qualityPool.length > 0) {
+    const n = qualityPool.length;
+    const gradRate = qualityPool.filter((l) => l.is_graduated).length / n;
+    const rugRate = qualityPool.filter((l) => l.is_confirmed_rugpull).length / n;
     const priorWeight = Math.max(0, 20 - n);
     quality = clamp(
       ((gradRate * 100 - rugRate * 150) * n + 50 * priorWeight) /
@@ -291,12 +316,11 @@ export function computeDimensions(
   // A mature token Mobula has evidence on but no price candles for never
   // traded, so it never rose: it counts as 1.0x instead of being dropped
   // (dropping it would keep only tokens that traded and inflate both).
-  const multiples = launches
-    .filter(qualifies)
+  const multiples = tieredOutcomePool(launches)
     .map((l) => l.peak_multiple ?? (l.peak_checked_at !== null ? 1 : null))
     .filter((m): m is number => m !== null)
     .sort((a, b) => a - b);
-  if (enough(multiples.length)) {
+  if (multiples.length > 0) {
     // Value: gain-based, log scale. 1x = 0, 10x = 100. The old linear
     // median/10 scored a token that never moved at 10.
     const median = multiples[Math.floor(multiples.length / 2)];

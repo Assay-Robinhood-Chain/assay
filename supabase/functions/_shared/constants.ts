@@ -26,7 +26,26 @@ export const BACKFILL_SAMPLE_CAP = 1000;
 // than the sample it actually wants — gives sampleWithMinimumAge (see
 // adapters.ts) real launches from across the timeline to pick from,
 // instead of only whatever the first page of results happens to contain.
-export const BACKFILL_POOL_MULTIPLIER = 3;
+// Lowered from 3 -> 1.5 after a large launchpad (Pons) hit 546
+// WallClockTime: rpcSelfIndexedAdapter pages Blockscout SEQUENTIALLY
+// (cursor-based, can't be parallelised), so poolTarget = sample *
+// this multiplier directly sets how many round-trips that loop makes.
+// The real fix is RPC_DISCOVERY_TIME_BUDGET_MS below — this just keeps
+// the common case comfortably inside it.
+export const BACKFILL_POOL_MULTIPLIER = 1.5;
+
+// Hard ceiling on how long rpcSelfIndexedAdapter's pagination loop is
+// allowed to keep calling Blockscout, wall-clock, regardless of
+// poolTarget/maxPages. Edge Function wall-clock limits are 150s (free)
+// / 400s (paid) for the WHOLE request — this budget is deliberately
+// well under that, leaving headroom for countUpstreamLaunches (before
+// this loop) and the insert/enrichment/scoring steps (after it) in the
+// same request. Hitting this budget is not an error: the loop just
+// returns whatever pool it has gathered so far instead of continuing
+// toward poolTarget, and sampleWithMinimumAge samples from that
+// smaller-than-ideal pool rather than the function being killed by the
+// platform mid-request.
+export const RPC_DISCOVERY_TIME_BUDGET_MS = 90_000;
 
 // --- Upstream discovery + sample resample (post-onboarding) ---
 // onboarding-backfill only ever runs once per launchpad. These two crons
@@ -82,6 +101,9 @@ export const MIN_GRADUATED_LIQUIDITY_USD = 1000;
 // A dimension is only scored when at least this many launches carry the
 // data it needs. Below that it is reported as missing (null) rather than
 // as a number computed from a handful of tokens.
+// v1.9: this floor no longer applies to Quality, Value or Consistency —
+// see tieredOutcomePool() in scoring.ts. It still gates Mechanism and
+// Market Health.
 export const MIN_DATA_POINTS_PER_DIMENSION = 5;
 
 // Mechanism is defined as contract verification + audit status + LP-lock,
@@ -94,15 +116,14 @@ export const MIN_DATA_POINTS_PER_DIMENSION = 5;
 export const MECHANISM_COMPONENTS_MEASURED = 1;
 export const MECHANISM_COMPONENTS_TOTAL = 3;
 
-// Tokens younger than this are not judged on outcomes: graduation and
-// peak-vs-launch need time to play out, so a launchpad whose sample is all
-// one or two days old would otherwise be scored on tokens that simply
-// haven't had a chance yet. Quality, Value and Consistency only count
-// tokens at least this old — EXCEPT a token that has already graduated,
-// which counts immediately regardless of age (see scoring.ts's
-// `qualifies()`): graduation is a completed event, not something that
-// needs more time to "play out". Mechanism and Market Health describe the
-// current state and count every token regardless.
+// The age threshold used by tieredOutcomePool()'s 2nd-priority tier (see
+// scoring.ts): once a launchpad has no graduated launches at all, its
+// launches at least this old are used for Quality/Value/Consistency
+// instead. A launch younger than this AND not graduated only reaches
+// these dimensions through tier 3 (the whole pool, when nothing has
+// graduated or aged past this yet) — see tieredOutcomePool() for the full
+// priority order. Mechanism and Market Health describe the current state
+// and count every token regardless of age.
 export const MIN_TOKEN_AGE_HOURS = 72;
 
 // A composite needs at least this many of the five dimensions measured.
@@ -132,6 +153,12 @@ export const MOBULA_PEAK_CONCURRENCY = 4;
 export const MOBULA_DETAILS_BATCH_SIZE = 10;
 export const MOBULA_DETAILS_CONCURRENCY = 4;
 
+// v1.9: Quality/Value/Consistency replace the old graduated-OR-mature
+// filter with a strict tiered pool (graduated > mature > whole pool, see
+// tieredOutcomePool() in scoring.ts) and drop the MIN_DATA_POINTS_PER_
+// DIMENSION floor for all three — one graduated or mature launch is now
+// enough to score off of, and a launchpad with neither is scored off its
+// whole (young, unproven) sample rather than showing "not yet scored".
 // v1.7: a graduated token counts toward Quality / Value / Consistency
 // immediately, regardless of MIN_TOKEN_AGE_HOURS — graduation is a
 // completed event, so it no longer waits out the 72h maturity window
@@ -150,7 +177,7 @@ export const MOBULA_DETAILS_CONCURRENCY = 4;
 //   - Market Health averages over ALL checked launches; a token with no DEX
 //     pool counts as zero liquidity instead of being left out.
 //   - Mechanism is capped by the share of its components actually measured.
-export const ALGORITHM_VERSION = 'v1.7';
+export const ALGORITHM_VERSION = 'v1.9';
 
 // SSRF-safe fetch (see ssrfSafeFetch.ts) and submission rate limiting
 export const URL_FETCH_TIMEOUT_MS = 8000;

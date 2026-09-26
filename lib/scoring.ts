@@ -87,38 +87,53 @@ export function dimensionGapReason(
   const sampled = launches.filter((l) => !l.excludedFromSample);
   const isMature = (l: Launch) =>
     hoursSince(l.launchDate, now) >= MIN_TOKEN_AGE_HOURS;
-  // Mirrors scoring.ts's qualifies(): a graduated launch counts toward
-  // Quality/Value/Consistency immediately, without waiting out the age gate.
-  const qualifies = (l: Launch) => l.isGraduated || isMature(l);
+  // v1.9: mirrors tieredOutcomePool() in
+  // supabase/functions/_shared/scoring.ts — graduated launches win outright
+  // if any exist, else mature (>=MIN_TOKEN_AGE_HOURS) ones, else the whole
+  // pool. Quality/Value/Consistency have no minimum-count floor any more
+  // (MIN_DATA_POINTS_PER_DIMENSION still gates Mechanism/Market Health
+  // below), so these three are only ever "not yet scored" when their
+  // tiered pool is completely empty.
+  const tieredSelect = (pool: Launch[]): Launch[] => {
+    const graduated = pool.filter((l) => l.isGraduated);
+    if (graduated.length > 0) return graduated;
+    const mature = pool.filter(isMature);
+    if (mature.length > 0) return mature;
+    return pool;
+  };
 
-  let n: number;
-  let what: string;
   switch (key) {
-    case 'quality':
-      n = sampled.filter(
-        (l) => l.metricsFetchedAt !== null && qualifies(l),
-      ).length;
-      what = `≥${MIN_TOKEN_AGE_HOURS}h old (or already graduated) with market data checked`;
-      break;
-    case 'mechanism':
-      n = sampled.filter((l) => l.isContractVerified !== null).length;
-      what = 'with contract-verification data';
-      break;
-    case 'marketHealth':
-      n = sampled.filter((l) => l.metricsFetchedAt !== null).length;
-      what = 'with market data checked';
-      break;
+    case 'quality': {
+      // Mirrors scoring.ts: tier-select over the CHECKED subset.
+      const checked = sampled.filter((l) => l.metricsFetchedAt !== null);
+      const n = tieredSelect(checked).length;
+      return n > 0 ? null : 'No launches with market data checked yet.';
+    }
+    case 'mechanism': {
+      const n = sampled.filter((l) => l.isContractVerified !== null).length;
+      return n >= need
+        ? null
+        : `${n} of ${need} minimum sampled launches with contract-verification data.`;
+    }
+    case 'marketHealth': {
+      const n = sampled.filter((l) => l.metricsFetchedAt !== null).length;
+      return n >= need
+        ? null
+        : `${n} of ${need} minimum sampled launches with market data checked.`;
+    }
     case 'value':
-    case 'consistency':
-      n = sampled.filter(
-        (l) =>
-          qualifies(l) && (l.peakMultiple !== null || l.peakCheckedAt !== null),
+    case 'consistency': {
+      // Mirrors scoring.ts: tier-select over ALL sampled launches FIRST,
+      // then check how many of that tier have price history — not the
+      // other way around, so a graduated-but-not-yet-priced tier still
+      // reports "no price history" rather than silently falling through
+      // to mature/whole-pool launches that happen to have data.
+      const n = tieredSelect(sampled).filter(
+        (l) => l.peakMultiple !== null || l.peakCheckedAt !== null,
       ).length;
-      what = `≥${MIN_TOKEN_AGE_HOURS}h old (or already graduated) with price history`;
-      break;
+      return n > 0 ? null : 'No price history for the eligible launches yet.';
+    }
   }
-  if (n >= need) return null;
-  return `${n} of ${need} minimum sampled launches ${what}.`;
 }
 
 /** Pure reimplementation of backfillLaunchpad()'s sizing rule (see
